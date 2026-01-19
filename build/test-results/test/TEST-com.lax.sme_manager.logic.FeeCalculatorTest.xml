@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.lax.sme_manager.logic.FeeCalculatorTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-01-18T14:51:24.249Z" hostname="C14208" time="0.004">
+  <properties/>
+  <testcase name="testBaseAmountCalculation_Weight" classname="com.lax.sme_manager.logic.FeeCalculatorTest" time="0.003"/>
+  <testcase name="testGrandTotal" classname="com.lax.sme_manager.logic.FeeCalculatorTest" time="0.0"/>
+  <testcase name="testFeeCalculation" classname="com.lax.sme_manager.logic.FeeCalculatorTest" time="0.0"/>
+  <testcase name="testBaseAmountCalculation_Lumpsum" classname="com.lax.sme_manager.logic.FeeCalculatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

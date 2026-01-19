@@ -1,0 +1,2 @@
+rootProject.name = "sme-mngr"
+

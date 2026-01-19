@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Manager - Complete UI/UX Wireframe Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            line-height: 1.6;
+            color: #1f2937;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .toc {
+            background: #f8fafc;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            border-left: 4px solid #2563eb;
+        }
+        
+        .toc h2 {
+            color: #2563eb;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .toc ol {
+            margin-left: 20px;
+        }
+        
+        .toc li {
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        
+        .toc a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        
+        .screen-section {
+            margin: 50px 0;
+            page-break-inside: avoid;
+        }
+        
+        .screen-header {
+            background: #f0f4f8;
+            padding: 20px 25px;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 3px solid #2563eb;
+            margin-bottom: 0;
+        }
+        
+        .screen-header h2 {
+            color: #2563eb;
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+        
+        .screen-meta {
+            color: #64748b;
+            font-size: 0.95em;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .screen-content {
+            background: white;
+            padding: 30px;
+            border: 1px solid #e5e7eb;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .screen-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        .screen-description {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border-left: 4px solid #10b981;
+        }
+        
+        .screen-description h4 {
+            color: #10b981;
+            margin-bottom: 8px;
+        }
+        
+        .specs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .spec-box {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #0284c7;
+        }
+        
+        .spec-box h5 {
+            color: #0284c7;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .spec-box ul {
+            margin-left: 15px;
+            font-size: 0.9em;
+        }
+        
+        .spec-box li {
+            margin-bottom: 5px;
+            color: #475569;
+        }
+        
+        .workflow-box {
+            background: #f0fdf4;
+            padding: 20px;
+            border-radius: 6px;
+            border-left: 3px solid #10b981;
+            margin: 20px 0;
+        }
+        
+        .workflow-box h5 {
+            color: #10b981;
+            margin-bottom: 10px;
+        }
+        
+        .navigation-path {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 0.95em;
+            border-left: 3px solid #f59e0b;
+        }
+        
+        .footer {
+            background: #1f2937;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            margin-top: 50px;
+        }
+        
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .color-swatch {
+            text-align: center;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .color-swatch-box {
+            height: 60px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .color-swatch-label {
+            font-size: 0.8em;
+            color: #64748b;
+            font-weight: 500;
+        }
+        
+        .feature-list {
+            list-style-position: inside;
+            margin-left: 10px;
+        }
+        
+        .feature-list li {
+            margin-bottom: 10px;
+            padding-left: 10px;
+            color: #475569;
+        }
+        
+        .feature-list li:before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .warning-box {
+            background: #fef2f2;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #ef4444;
+            margin: 15px 0;
+        }
+        
+        .warning-box h5 {
+            color: #ef4444;
+            margin-bottom: 8px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            .screen-section {
+                page-break-inside: avoid;
+            }
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #0284c7;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>💳 Payment Manager</h1>
+            <p>Complete Wireframe & UI/UX Design Specification</p>
+            <p style="margin-top: 10px; font-size: 0.95em;">Cheque Printing & Management Desktop Application</p>
+        </div>
+        
+        <!-- CONTENT -->
+        <div class="content">
+            
+            <!-- DESIGN PHILOSOPHY -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>📐 Design Philosophy & Theme</h2>
+                </div>
+                <div class="screen-content">
+                    <p style="margin-bottom: 20px;"><strong>Theme:</strong> Minimalistic Light Theme optimized for fast loading on older machines (Windows 7+, 2-4GB RAM)</p>
+                    
+                    <h4 style="color: #2563eb; margin: 20px 0 15px 0;">Color Palette</h4>
+                    <div class="color-palette">
+                        <div class="color-swatch">
+                            <div class="color-swatch-box" style="background: #2563eb;"></div>
+                            <span class="color-swatch-label">Primary<br>#2563EB</span>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-box" style="background: #ffffff; border: 2px solid #e5e7eb;"></div>
+                            <span class="color-swatch-label">Background<br>#FFFFFF</span>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-box" style="background: #f8fafc;"></div>
+                            <span class="color-swatch-label">Light BG<br>#F8FAFC</span>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-box" style="background: #1f2937;"></div>
+                            <span class="color-swatch-label">Text<br>#1F2937</span>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-box" style="background: #10b981;"></div>
+                            <span class="color-swatch-label">Success<br>#10B981</span>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-box" style="background: #f59e0b;"></div>
+                            <span class="color-swatch-label">Warning<br>#F59E0B</span>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-box" style="background: #ef4444;"></div>
+                            <span class="color-swatch-label">Error<br>#EF4444</span>
+                        </div>
+                        <div class="color-swatch">
+                            <div class="color-swatch-box" style="background: #3b82f6;"></div>
+                            <span class="color-swatch-label">Accent<br>#3B82F6</span>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f0f9ff; padding: 20px; border-radius: 6px; margin-top: 20px; border-left: 3px solid #0284c7;">
+                        <strong>✓ Typography:</strong> Sans-serif (Arial, Segoe UI) | <strong>✓ Icons:</strong> Simple outlined style | <strong>✓ Performance:</strong> Minimal animations, flat design
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 1: LOGIN -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 1: Login</h2>
+                    <div class="screen-meta">
+                        <span><strong>Purpose:</strong> User authentication</span>
+                        <span><strong>Navigation:</strong> First screen on app launch</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/ad8ca7d5-4901-4ab4-a3ce-cd5a1eb508ca.png" alt="Login Screen" class="screen-image">
+                    
+                    <div class="screen-description">
+                        <h4>🎯 Key Features</h4>
+                        <ul class="feature-list">
+                            <li>Payment Manager logo prominently displayed</li>
+                            <li>Username and PIN input fields</li>
+                            <li>Simple, centered layout for first-time users</li>
+                            <li>Keyboard-friendly (Tab, Enter)</li>
+                            <li>Setup New User link for first installation</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="navigation-path">
+                        <strong>After Login:</strong> → Dashboard (main screen)
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 2: DASHBOARD -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 2: Dashboard</h2>
+                    <div class="screen-meta">
+                        <span><strong>Purpose:</strong> Quick overview & statistics</span>
+                        <span><strong>Navigation:</strong> Default screen after login</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/seedream_images/26432db8-15cf-4c79-9396-43eda112a227.png" alt="Dashboard Screen" class="screen-image">
+                    
+                    <div class="screen-description">
+                        <h4>🎯 Key Components</h4>
+                        <ul class="feature-list">
+                            <li>Welcome message with user name (e.g., "Welcome Mazhar")</li>
+                            <li>Metric cards: Today's Cheques | This Month's Cheques | HDFC Cheques</li>
+                            <li>Bar chart showing cheque distribution (minimalistic, no animations)</li>
+                            <li>Quick action buttons: Create New Cheque | View History | Manage Vendors</li>
+                            <li>Loads quickly even on older machines</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>💡 User Experience</h5>
+                        Eye-catching statistics create app responsiveness. One-click access to most-used features. Simple bar chart provides visual insights without performance impact.
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 3: VENDORS -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 3: Vendors Management</h2>
+                    <div class="screen-meta">
+                        <span><strong>Purpose:</strong> Add, edit, delete vendors</span>
+                        <span><strong>Navigation:</strong> Left sidebar "Vendors" button</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/3e2db41b-9b9e-4314-933e-fb88adb0b2c0.png" alt="Vendors Screen" class="screen-image">
+                    
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>📋 Table Columns</h5>
+                            <ul>
+                                <li>Vendor Name</li>
+                                <li>Contact Info</li>
+                                <li>Address</li>
+                                <li>Notes</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>🎮 Actions</h5>
+                            <ul>
+                                <li>Real-time search</li>
+                                <li>Add Vendor button</li>
+                                <li>Edit button (blue)</li>
+                                <li>Delete button (red)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="screen-description">
+                        <h4>✨ Key Features</h4>
+                        Fast search filters vendors as user types. Large table with readable font. Clear action buttons. Confirmation dialog before delete.
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 3A: ADD/EDIT VENDOR DIALOG -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 3a: Add/Edit Vendor Dialog</h2>
+                    <div class="screen-meta">
+                        <span><strong>Trigger:</strong> Click "Add Vendor" or Edit row</span>
+                        <span><strong>Type:</strong> Modal Dialog</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/541ee82e-041d-487e-a987-a3351e0dfafa.png" alt="Vendor Dialog" class="screen-image">
+                    
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>📝 Form Fields</h5>
+                            <ul>
+                                <li>Vendor Name (Required *)</li>
+                                <li>Contact Info (Optional)</li>
+                                <li>Address (Optional)</li>
+                                <li>Notes (Optional)</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>🔧 Features</h5>
+                            <ul>
+                                <li>Modal overlay</li>
+                                <li>Save & Cancel buttons</li>
+                                <li>Form validation</li>
+                                <li>Error messages</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 4: BANK ACCOUNTS -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 4: Bank Accounts & Cheque Books</h2>
+                    <div class="screen-meta">
+                        <span><strong>Purpose:</strong> Manage bank accounts & cheque books</span>
+                        <span><strong>Navigation:</strong> Left sidebar "Bank Accounts"</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/ceae29d7-f286-4aae-9769-b9ecfac93621.png" alt="Bank Accounts Screen" class="screen-image">
+                    
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>🏦 Bank Accounts (Part A)</h5>
+                            <ul>
+                                <li>Account Name</li>
+                                <li>Account Number (masked)</li>
+                                <li>Bank Name</li>
+                                <li>Branch</li>
+                                <li>IFSC Code (India-specific)</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>📚 Cheque Books (Part B)</h5>
+                            <ul>
+                                <li>Series (A, B, C...)</li>
+                                <li>Start Number</li>
+                                <li>End Number</li>
+                                <li>Status (Active/Exhausted)</li>
+                                <li>Issued Date</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h5>⚠️ Near-Exhaustion Warning</h5>
+                        When cheque book has <10 cheques left, shows: "Only X cheques left in Series A"
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 4A: ADD/EDIT BANK DIALOG -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 4a: Add/Edit Bank Account Dialog</h2>
+                    <div class="screen-meta">
+                        <span><strong>Trigger:</strong> "Add Bank Account" or Edit row</span>
+                        <span><strong>Type:</strong> Modal Dialog</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/ce9543dc-641d-437e-894c-492de5228e9b.png" alt="Bank Account Dialog" class="screen-image">
+                    
+                    <div class="screen-description">
+                        <h4>📝 Form Fields</h4>
+                        <ul class="feature-list">
+                            <li><strong>Account Name</strong> (Required *) - e.g., "Current A/c"</li>
+                            <li><strong>Account Number</strong> (Required *) - Masked on display</li>
+                            <li><strong>Bank Name</strong> (Required *) - Dropdown suggestions</li>
+                            <li><strong>Branch Name</strong> (Optional)</li>
+                            <li><strong>IFSC Code</strong> (Required *) - India market</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 4B: ADD/EDIT CHEQUE BOOK DIALOG -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 4b: Add/Edit Cheque Book Dialog</h2>
+                    <div class="screen-meta">
+                        <span><strong>Trigger:</strong> "Add Cheque Book" or Edit row</span>
+                        <span><strong>Type:</strong> Modal Dialog</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/670ea6ef-ab3b-4afe-9887-a40ca919f965.png" alt="Cheque Book Dialog" class="screen-image">
+                    
+                    <div class="screen-description">
+                        <h4>📝 Form Fields</h4>
+                        <ul class="feature-list">
+                            <li><strong>Bank Account</strong> (Read-only, pre-filled)</li>
+                            <li><strong>Series</strong> (Required *) - e.g., "A", "B"</li>
+                            <li><strong>Start Number</strong> (Required *) - e.g., 000101</li>
+                            <li><strong>End Number</strong> (Required *) - e.g., 000150</li>
+                            <li><strong>Issued Date</strong> (Required *) - Date picker, defaults today</li>
+                            <li><strong>Status</strong> (Required *) - Dropdown: ACTIVE / EXHAUSTED</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>🔍 Smart Features</h5>
+                        Auto-calculates cheque book size (End - Start + 1). Numbers formatted with leading zeros. Status dropdown prevents invalid entries.
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 5: CHEQUE WIZARD STEP 1 -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 5: Cheque Wizard - Step 1 of 3</h2>
+                    <div class="screen-meta">
+                        <span><span class="badge">WIZARD</span></span>
+                        <span><strong>Purpose:</strong> Select bank and vendor</span>
+                        <span><strong>Navigation:</strong> "Create New Cheque" button</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/b61335d6-48b0-49db-bb25-8c60582b3f52.png" alt="Cheque Wizard Step 1" class="screen-image">
+                    
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>📋 Form Fields</h5>
+                            <ul>
+                                <li>Bank Account (Required)</li>
+                                <li>Vendor (Required)</li>
+                                <li>+ Add New Vendor link</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>🎮 Buttons</h5>
+                            <ul>
+                                <li>Back (disabled)</li>
+                                <li>Next (enabled after selection)</li>
+                                <li>Cancel (exits)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>✨ Wizard Experience</h5>
+                        Guides user step-by-step through cheque creation. Can add vendor without leaving wizard. Validation ensures both fields filled before Next.
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 5B: CHEQUE WIZARD STEP 2 -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 5b: Cheque Wizard - Step 2 of 3</h2>
+                    <div class="screen-meta">
+                        <span><span class="badge">WIZARD</span></span>
+                        <span><strong>Purpose:</strong> Enter amount and date</span>
+                        <span><strong>Previous:</strong> Step 1</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/2773b8f4-0a5c-40ea-b28d-0fed909ecde0.png" alt="Cheque Wizard Step 2" class="screen-image">
+                    
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>📝 Required Fields</h5>
+                            <ul>
+                                <li>Amount (auto-comma format)</li>
+                                <li>Cheque Date (date picker)</li>
+                                <li>Amount in Words (auto-generated)</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>📝 Optional Fields</h5>
+                            <ul>
+                                <li>Purpose / Remarks</li>
+                                <li>Internal Ref / PO</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="screen-description">
+                        <h4>✨ Smart Features</h4>
+                        Amount-in-words converts automatically as user types. Date defaults to today. Read-only preview builds confidence. Optional fields reduce cognitive load.
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 5C: CHEQUE WIZARD STEP 3 -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 5c: Cheque Wizard - Step 3 of 3</h2>
+                    <div class="screen-meta">
+                        <span><span class="badge">WIZARD</span></span>
+                        <span><strong>Purpose:</strong> Confirm and print</span>
+                        <span><strong>Previous:</strong> Step 2</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/eaf63c70-feb1-485e-ad57-ab51760e9415.png" alt="Cheque Wizard Step 3" class="screen-image">
+                    
+                    <div class="screen-description">
+                        <h4>📊 Confirmation Summary</h4>
+                        <ul class="feature-list">
+                            <li>Bank Account (read-only)</li>
+                            <li>Vendor Name (read-only)</li>
+                            <li>Cheque Number (auto-assigned)</li>
+                            <li>Cheque Date (read-only)</li>
+                            <li>Amount (read-only)</li>
+                            <li>Amount in Words (read-only)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>✅ Options</h5>
+                            <ul>
+                                <li>Mark as "Issued" after print</li>
+                                <li>Open history after completion</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>🎮 Action Buttons</h5>
+                            <ul>
+                                <li>Back (to Step 2)</li>
+                                <li>Print (primary action)</li>
+                                <li>Save Without Print</li>
+                                <li>Cancel (with confirmation)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 6: CHEQUE HISTORY -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 6: Cheque History & Reports</h2>
+                    <div class="screen-meta">
+                        <span><strong>Purpose:</strong> View and manage all cheques</span>
+                        <span><strong>Navigation:</strong> Left sidebar "Cheques"</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/ece87353-184a-4d6a-b163-1eecbe5735bb.png" alt="Cheque History Screen" class="screen-image">
+                    
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>🔍 Filter Options</h5>
+                            <ul>
+                                <li>Vendor Filter</li>
+                                <li>Bank Account Filter</li>
+                                <li>Status Filter</li>
+                                <li>Date Range</li>
+                                <li>Amount Range</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>📊 Table Columns</h5>
+                            <ul>
+                                <li>Date</li>
+                                <li>Cheque Number</li>
+                                <li>Vendor Name</li>
+                                <li>Bank Account</li>
+                                <li>Amount</li>
+                                <li>Status (color-coded)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="screen-description">
+                        <h4>🎮 Actions</h4>
+                        <ul class="feature-list">
+                            <li>View Details - Opens cheque details dialog</li>
+                            <li>Reprint - Marks as reprint copy and prints</li>
+                            <li>Mark as Cleared - Quick status update</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 6A: CHEQUE DETAILS -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 6a: Cheque Details Dialog</h2>
+                    <div class="screen-meta">
+                        <span><strong>Trigger:</strong> Click "View Details" on cheque row</span>
+                        <span><strong>Type:</strong> Modal Dialog</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/seedream_images/fcc5408d-b492-44d5-acbe-9f619c69d55a.png" alt="Cheque Details Dialog" class="screen-image">
+                    
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>📋 Read-Only Fields</h5>
+                            <ul>
+                                <li>Bank Account</li>
+                                <li>Vendor Name</li>
+                                <li>Cheque Number</li>
+                                <li>Date</li>
+                                <li>Amount</li>
+                                <li>Amount in Words</li>
+                                <li>Created Date</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>✏️ Editable Section</h5>
+                            <ul>
+                                <li>Status Dropdown</li>
+                                <li>Update Button</li>
+                                <li>Reprint Button</li>
+                                <li>Close Button</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>🔄 Status Flow</h5>
+                        CREATED → PRINTED → ISSUED → CLEARED (or CANCELLED / BOUNCED)
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 7: PRINT SETTINGS -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 7: Cheque Printing Settings & Layout</h2>
+                    <div class="screen-meta">
+                        <span><strong>Purpose:</strong> Configure print templates</span>
+                        <span><strong>Navigation:</strong> Settings → Print Settings</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/seedream_images/46917839-59b7-41c3-8b8c-b156c1f615e1.png" alt="Print Settings Screen" class="screen-image">
+                    
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>🔧 Configuration</h5>
+                            <ul>
+                                <li>Select Bank Account</li>
+                                <li>Template Name</li>
+                                <li>Offset Settings (pixels)</li>
+                                <li>Date X/Y</li>
+                                <li>Payee X/Y</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>🔧 More Settings</h5>
+                            <ul>
+                                <li>Amount X/Y</li>
+                                <li>Amount Words X/Y</li>
+                                <li>Top Margin</li>
+                                <li>Left Margin</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="screen-description">
+                        <h4>🎯 Actions</h4>
+                        <ul class="feature-list">
+                            <li>Test Print (Plain Paper) - User adjusts offsets based on alignment</li>
+                            <li>Save Template - Saves current offsets</li>
+                            <li>Set as Default - Makes template default for bank</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>🔨 Test Print Workflow</h5>
+                        1. Print test on plain paper → 2. Compare to real cheque → 3. Adjust X/Y offsets → 4. Reprint test → 5. Save template when perfect
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SCREEN 8: SETTINGS -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>Screen 8: Settings & Backup</h2>
+                    <div class="screen-meta">
+                        <span><strong>Purpose:</strong> Backup, restore, user management</span>
+                        <span><strong>Navigation:</strong> Left sidebar "Settings"</span>
+                    </div>
+                </div>
+                <div class="screen-content">
+                    <img src="https://user-gen-media-assets.s3.amazonaws.com/gemini_images/680135e6-522d-4e3b-b6e3-a1bd3ac08a93.png" alt="Settings Screen" class="screen-image">
+                    
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>💾 Backup & Restore</h5>
+                            <ul>
+                                <li>Export Database</li>
+                                <li>Import from Backup</li>
+                                <li>Backup location</li>
+                                <li>Database size display</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>👤 User & Security</h5>
+                            <ul>
+                                <li>Current user display</li>
+                                <li>Change PIN option</li>
+                                <li>Create New User (optional)</li>
+                                <li>Auto-logout settings</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h5>⚠️ Important</h5>
+                        Backup/restore operations show clear warnings before destructive actions. Database location shown but not easily changeable for safety.
+                    </div>
+                </div>
+            </section>
+            
+            <!-- USER WORKFLOWS -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>🚀 Key User Workflows</h2>
+                </div>
+                <div class="screen-content">
+                    <div class="workflow-box">
+                        <h5>📋 Workflow 1: Create & Print a Cheque</h5>
+                        1. Click "Create New Cheque" → 2. Select Bank + Vendor (Step 1) → 3. Enter Amount + Date (Step 2) → 4. Confirm & Print (Step 3) → 5. Cheque marked PRINTED
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>🔍 Workflow 2: Check Cheque Status</h5>
+                        1. Click "Cheques" → 2. Apply filters (vendor, bank, status) → 3. Click cheque row → 4. View Details → 5. Update status if needed
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>🔄 Workflow 3: Reprint a Cheque</h5>
+                        1. Cheques screen → 2. Find cheque → 3. Click "Reprint" → 4. Print dialog opens → 5. Place cheque in printer and print
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>⚙️ Workflow 4: First-Time Setup</h5>
+                        1. Launch app → 2. Login/Setup user → 3. Add bank accounts → 4. Add vendors → 5. Configure print templates (test print alignment) → 6. Ready to create cheques
+                    </div>
+                </div>
+            </section>
+            
+            <!-- TECHNICAL SPECS -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>⚙️ Technical Specifications</h2>
+                </div>
+                <div class="screen-content">
+                    <div class="specs">
+                        <div class="spec-box">
+                            <h5>🖥️ Platform & Performance</h5>
+                            <ul>
+                                <li>Target: Windows 7+</li>
+                                <li>Hardware: 2-4GB RAM, older CPUs</li>
+                                <li>Startup time: <2 seconds</li>
+                                <li>Cheque creation: <1 second/step</li>
+                                <li>DB queries: <200ms</li>
+                            </ul>
+                        </div>
+                        <div class="spec-box">
+                            <h5>🔐 Security & Storage</h5>
+                            <ul>
+                                <li>PIN: SHA-256 hash (not plaintext)</li>
+                                <li>Database: SQLite in %APPDATA%</li>
+                                <li>Backup/Restore: Built-in</li>
+                                <li>Optional: File encryption</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="screen-description">
+                        <h4>📊 Database Tables</h4>
+                        <ul class="feature-list">
+                            <li>users - User credentials and info</li>
+                            <li>vendors - Vendor master data</li>
+                            <li>bank_accounts - Bank account details</li>
+                            <li>cheque_books - Cheque series management</li>
+                            <li>cheques - All cheques created/printed</li>
+                            <li>cheque_layout_templates - Print layout offsets per bank</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- FUTURE ENHANCEMENTS -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>🚀 Future Extension Points</h2>
+                </div>
+                <div class="screen-content">
+                    <div class="workflow-box">
+                        <h5>🌐 REST API Wrapper</h5>
+                        Wrap core services (domain, repository, service layers) with a REST API for Android app integration. Same SQLite schema reused.
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>📱 Mobile App (via REST API)</h5>
+                        Android app to view vendors, cheques, create cheques, and either queue for desktop printing or generate PDFs.
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>👥 Multi-User Support</h5>
+                        Different users with different PINs. Optional: Role-based access (viewer vs. manager).
+                    </div>
+                    
+                    <div class="workflow-box">
+                        <h5>📋 Audit Logging & Reports</h5>
+                        Track who created/modified cheques. Generate reports: vendor summary, bank reconciliation, cash flow.
+                    </div>
+                </div>
+            </section>
+            
+            <!-- CONFIRMATION QUESTIONS -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>❓ Questions for User Confirmation</h2>
+                </div>
+                <div class="screen-content">
+                    <div style="background: #fef3c7; padding: 20px; border-radius: 6px; border-left: 3px solid #f59e0b;">
+                        <p style="margin-bottom: 15px;">Before proceeding to implementation, please review and confirm the following:</p>
+                        
+                        <ol style="margin-left: 20px; line-height: 2;">
+                            <li><strong>App Name:</strong> Is "Payment Manager" the final name?</li>
+                            <li><strong>Dashboard Metrics:</strong> Are the current statistics correct, or would you add others (e.g., "Cleared vs Outstanding")?</li>
+                            <li><strong>Wizard vs Form:</strong> Prefer 3-step wizard or single comprehensive form?</li>
+                            <li><strong>Multi-User:</strong> Support multiple users in v1.0, or single-user only?</li>
+                            <li><strong>Cheque Status:</strong> Are statuses (CREATED → PRINTED → ISSUED → CLEARED) correct?</li>
+                            <li><strong>Print Templates:</strong> Pre-configured templates for Indian banks (HDFC, SBI, ICICI) or user-configured only?</li>
+                            <li><strong>Backup:</strong> Automatic backups (daily/weekly) or manual-only?</li>
+                            <li><strong>Reports:</strong> Beyond history, need specific reports (vendor summary, bank reconciliation)?</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- NEXT STEPS -->
+            <section class="screen-section">
+                <div class="screen-header">
+                    <h2>📋 Implementation Roadmap</h2>
+                </div>
+                <div class="screen-content">
+                    <div style="background: #f0f9ff; padding: 20px; border-radius: 6px; border-left: 3px solid #0284c7;">
+                        <ol style="margin-left: 20px; line-height: 2;">
+                            <li><strong>Phase 1:</strong> User Approval on wireframes & design</li>
+                            <li><strong>Phase 2:</strong> Project setup (Gradle, JavaFX, SQLite dependencies)</li>
+                            <li><strong>Phase 3:</strong> Database schema & repository layer</li>
+                            <li><strong>Phase 4:</strong> Service layer & business logic</li>
+                            <li><strong>Phase 5:</strong> UI screens & navigation</li>
+                            <li><strong>Phase 6:</strong> Printing & alignment features</li>
+                            <li><strong>Phase 7:</strong> Testing, refinement & deployment</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+            
+        </div>
+        
+        <!-- FOOTER -->
+        <div class="footer">
+            <p><strong>Payment Manager - Cheque Printing & Management System</strong></p>
+            <p>Complete UI/UX Wireframe & Design Specification</p>
+            <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.9;">Version 1.0 | December 2025 | Status: Ready for Review</p>
+        </div>
+    </div>
+</body>
+</html>

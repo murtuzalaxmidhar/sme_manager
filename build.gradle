@@ -1,0 +1,85 @@
+// groovy
+plugins {
+    id 'application'
+    id 'java'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+def javafxVersion = '21'
+
+dependencies {
+    // SQLite JDBC
+    implementation 'org.xerial:sqlite-jdbc:3.44.0.0'
+
+    // Lombok - NO runtime overhead, only compile-time code generation
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    // JavaFX
+    implementation "org.openjfx:javafx-base:${javafxVersion}"
+    implementation "org.openjfx:javafx-controls:${javafxVersion}"
+    implementation "org.openjfx:javafx-graphics:${javafxVersion}"
+    implementation "org.openjfx:javafx-fxml:${javafxVersion}"
+
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+
+    //Logging
+    implementation 'org.slf4j:slf4j-api:2.0.13'
+    implementation 'ch.qos.logback:logback-classic:1.5.6'
+
+    //For Autocomplete combo
+    implementation "org.controlsfx:controlsfx:11.2.2"
+
+}
+
+javafx {
+    version = javafxVersion
+    modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.graphics' ]
+}
+
+run {
+    jvmArgs = [
+            '--add-exports', 'javafx.base/com.sun.javafx.event=ALL-UNNAMED',
+            '--add-exports', 'javafx.graphics/com.sun.javafx.scene.control=ALL-UNNAMED'
+    ]
+}
+
+application {
+    mainClass.set('com.lax.sme_manager.LaxSmeManagerStarter')
+    applicationDefaultJvmArgs = ["--add-modules=javafx.controls,javafx.fxml,javafx.graphics"]
+}
+
+tasks.named('run', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    doFirst {
+        jvmArgs = (jvmArgs ?: []) + ['--add-modules=javafx.controls,javafx.fxml,javafx.graphics']
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+task copyDependencies(type: Copy) {
+    from configurations.runtimeClasspath
+    into "$buildDir/libs/libs"
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class': 'com.lax.sme_manager.LaxSmeManagerStarter'
+        )
+    }
+}

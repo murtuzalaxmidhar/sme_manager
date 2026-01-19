@@ -1,0 +1,70 @@
+package com.lax.sme_manager.util;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+/**
+ * Handles database backups on exit and manual triggers.
+ */
+public class BackupService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BackupService.class);
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmm");
+
+    public void performBackup() {
+        File dbFile = DatabaseManager.getDatabaseFile();
+        if (!dbFile.exists())
+            return;
+
+        // 1. Local Backup
+        backupToPath(DatabaseManager.getAppDataDir().resolve("Backups"));
+
+        // 2. Cloud/User defined Backup
+        String customPath = ConfigManager.getInstance().getProperty(ConfigManager.KEY_BACKUP_PATH, null);
+        if (customPath != null && !customPath.trim().isEmpty()) {
+            backupToPath(Paths.get(customPath));
+        }
+    }
+
+    private void backupToPath(Path targetDir) {
+        try {
+            Files.createDirectories(targetDir);
+            String timestamp = LocalDateTime.now().format(FORMATTER);
+            Path targetFile = targetDir.resolve("data_backup_" + timestamp + ".db");
+
+            Files.copy(DatabaseManager.getDatabaseFile().toPath(), targetFile, StandardCopyOption.REPLACE_EXISTING);
+            LOGGER.info("Backup created at: {}", targetFile);
+
+            // Cleanup old backups (keep last 30)
+            cleanupOldBackups(targetDir);
+
+        } catch (IOException e) {
+            LOGGER.error("Backup failed for path: {}", targetDir, e);
+        }
+    }
+
+    private void cleanupOldBackups(Path targetDir) {
+        try {
+            Files.list(targetDir)
+                    .filter(p -> p.getFileName().toString().startsWith("data_backup_"))
+                    .sorted((p1, p2) -> Long.compare(p2.toFile().lastModified(), p1.toFile().lastModified()))
+                    .skip(30)
+                    .forEach(p -> {
+                        try {
+                            Files.delete(p);
+                        } catch (IOException ignored) {
+                        }
+                    });
+        } catch (IOException e) {
+            LOGGER.warn("Failed to cleanup old backups", e);
+        }
+    }
+}
