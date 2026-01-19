@@ -28,8 +28,7 @@ jpackage --name %APP_NAME% ^
          --type msi ^
          --win-dir-chooser ^
          --win-menu ^
-         --win-shortcut ^
-         --icon assets/app_icon.ico
+         --win-shortcut
 
 echo Done! MSI is in build/dist
 pause
