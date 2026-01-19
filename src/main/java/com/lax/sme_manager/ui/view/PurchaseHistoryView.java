@@ -26,7 +26,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.function.Consumer;
 
-public class PurchaseHistoryView extends VBox {
+public class PurchaseHistoryView extends VBox implements RefreshableView {
     private final PurchaseHistoryViewModel viewModel;
     private final VendorRepository vendorRepository;
     private final ExportService exportService;
@@ -517,6 +517,13 @@ public class PurchaseHistoryView extends VBox {
                 viewModel.deletePurchase(p);
             }
         });
+    }
+
+    @Override
+    public void refresh() {
+        if (viewModel != null) {
+            viewModel.loadPurchases();
+        }
     }
 
     private String getVendorName(int id) {

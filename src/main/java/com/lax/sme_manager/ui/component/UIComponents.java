@@ -1,8 +1,6 @@
 package com.lax.sme_manager.ui.component;
 
 import com.lax.sme_manager.domain.Vendor;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;

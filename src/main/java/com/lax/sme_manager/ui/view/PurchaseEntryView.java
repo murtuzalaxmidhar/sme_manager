@@ -14,16 +14,12 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import org.controlsfx.control.textfield.AutoCompletionBinding;
-import org.controlsfx.control.textfield.TextFields;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import javafx.util.StringConverter;
 import org.slf4j.Logger;
 
@@ -31,7 +27,7 @@ import org.slf4j.Logger;
  * Modern MVVM View for Purchase Entry.
  * Decoupled from logic, purely handles UI binding and layout.
  */
-public class PurchaseEntryView extends VBox {
+public class PurchaseEntryView extends VBox implements RefreshableView {
     private static final Logger LOGGER = AppLogger.getLogger(PurchaseEntryView.class);
 
     private final PurchaseEntryViewModel viewModel;
@@ -416,6 +412,14 @@ public class PurchaseEntryView extends VBox {
             else
                 statusLabel.setStyle(UIStyles.getSuccessStatusStyle());
         });
+    }
+
+    @Override
+    public void refresh() {
+        LOGGER.info("Refreshing PurchaseEntryView data");
+        if (vendorComboBox != null && vendorCache != null) {
+            vendorComboBox.setItems(vendorCache.getAllVendors());
+        }
     }
 
     public PurchaseEntryViewModel getViewModel() {

@@ -29,24 +29,33 @@ public class DatabaseManager {
         String home = System.getProperty("user.home");
         String os = System.getProperty("os.name").toLowerCase();
 
-        Path appDataBase;
+        Path appDataDir;
         if (os.contains("win")) {
-            String appData = System.getenv("APPDATA");
-            appDataBase = (appData != null) ? Paths.get(appData) : Paths.get(home, "AppData", "Roaming");
+            // Standard Windows Production Path: LocalAppData\LaxSMEManager
+            String localAppData = System.getenv("LOCALAPPDATA");
+            if (localAppData != null && !localAppData.isEmpty()) {
+                appDataDir = Paths.get(localAppData).resolve("LaxSMEManager");
+            } else {
+                // Fallback if LOCALAPPDATA is missing (rare)
+                appDataDir = Paths.get(home, "AppData", "Local", "LaxSMEManager");
+            }
         } else {
-            appDataBase = Paths.get(home);
+            // For macOS/Linux development/production
+            appDataDir = Paths.get(home, "LaxSMEManager");
         }
 
-        Path appDir = appDataBase.resolve("LaxSMEManager");
-        dbPath = appDir.resolve("data.db");
+        dbPath = appDataDir.resolve("lax_data.db");
         dbUrl = "jdbc:sqlite:" + dbPath.toString();
 
         try {
-            Files.createDirectories(appDir);
-            LOGGER.info("Database initialized at: {}", dbPath);
+            if (!Files.exists(appDataDir)) {
+                Files.createDirectories(appDataDir);
+                LOGGER.info("Created application data directory at: {}", appDataDir);
+            }
+            LOGGER.info("Database path standard set: {}", dbPath);
         } catch (Exception e) {
-            LOGGER.error("Failed to create application data directory", e);
-            // Fallback to local if absolutely necessary, but preferred to fail fast
+            LOGGER.error("CRITICAL: Failed to initialize database directory", e);
+            throw new RuntimeException("Could not initialize storage directory: " + appDataDir, e);
         }
     }
 

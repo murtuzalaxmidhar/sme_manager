@@ -5,19 +5,15 @@ import com.lax.sme_manager.ui.component.UIStyles;
 import com.lax.sme_manager.ui.theme.LaxTheme;
 import com.lax.sme_manager.util.i18n.AppLabel;
 import com.lax.sme_manager.viewmodel.DashboardViewModel;
-import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.application.Platform;
-import javafx.scene.paint.Color;
 
-public class DashboardView extends ScrollPane {
+public class DashboardView extends ScrollPane implements RefreshableView {
 
     private final DashboardViewModel viewModel;
 
@@ -131,5 +127,12 @@ public class DashboardView extends ScrollPane {
         });
 
         return card;
+    }
+
+    @Override
+    public void refresh() {
+        if (viewModel != null) {
+            viewModel.loadMetrics();
+        }
     }
 }

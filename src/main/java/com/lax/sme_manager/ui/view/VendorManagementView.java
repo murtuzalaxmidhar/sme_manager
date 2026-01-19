@@ -26,7 +26,7 @@ import java.util.Optional;
  * - Search/Filter by name or contact
  * - Add/Edit/Soft Delete operations
  */
-public class VendorManagementView extends VBox {
+public class VendorManagementView extends VBox implements RefreshableView {
     private static final Logger LOGGER = LoggerFactory.getLogger(VendorManagementView.class);
 
     private final VendorRepository repository;
@@ -235,5 +235,10 @@ public class VendorManagementView extends VBox {
                 }
             }
         });
+    }
+
+    @Override
+    public void refresh() {
+        loadVendors();
     }
 }

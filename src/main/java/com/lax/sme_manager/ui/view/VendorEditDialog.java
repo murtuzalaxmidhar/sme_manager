@@ -5,7 +5,6 @@ import com.lax.sme_manager.ui.theme.LaxTheme;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 
 import java.time.LocalDateTime;

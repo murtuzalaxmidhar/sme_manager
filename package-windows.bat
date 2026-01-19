@@ -1,7 +1,8 @@
 @echo off
 set VERSION=1.0
 set MAIN_CLASS=com.lax.sme_manager.LaxSmeManagerStarter
-set APP_NAME=LaxSMEManager
+set APP_NAME="Lax Yard & SME Manager"
+set VENDOR="RASolutions"
 
 echo [1/3] Cleaning and Building Project...
 call gradlew clean build copyDependencies
@@ -12,12 +13,12 @@ jlink --module-path "%JAVA_HOME%\jmods;build\libs\libs;build\libs" ^
       --add-modules javafx.controls,javafx.fxml,javafx.graphics,java.sql,java.naming ^
       --output build\runtime ^
       --strip-debug ^
-      --compress 2 ^
       --no-header-files ^
       --no-man-pages
 
 echo [3/3] Packaging MSI...
-jpackage --name "%APP_NAME%" ^
+jpackage --name %APP_NAME% ^
+         --vendor %VENDOR% ^
          --app-version %VERSION% ^
          --input build\libs ^
          --dest build\dist ^

@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +26,10 @@ public class PurchaseHistoryService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PurchaseHistoryService.class);
 
     private final PurchaseRepository purchaseRepository;
-    private final VendorRepository vendorRepository;
     private static final int PAGE_SIZE = 50; // Records per page
 
     public PurchaseHistoryService(PurchaseRepository purchaseRepository, VendorRepository vendorRepository) {
         this.purchaseRepository = purchaseRepository;
-        this.vendorRepository = vendorRepository;
     }
 
     /**

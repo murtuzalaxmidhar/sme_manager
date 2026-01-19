@@ -112,16 +112,35 @@ public class LaxSmeManagerApp {
         sidebar.setPrefWidth(220);
         sidebar.setSpacing(0);
 
-        // Header
-        Label header = new Label("LAX MANAGER");
-        header.setStyle(getSidebarHeaderStyle());
-        header.setMaxWidth(Double.MAX_VALUE);
-        header.setPadding(new Insets(
+        // Header with Refresh Icon
+        HBox headerContainer = new HBox();
+        headerContainer.setAlignment(Pos.CENTER_LEFT);
+        headerContainer.setStyle(getSidebarHeaderStyle());
+        headerContainer.setPadding(new Insets(
                 LaxTheme.Spacing.SPACE_20,
                 LaxTheme.Spacing.SPACE_16,
                 LaxTheme.Spacing.SPACE_20,
                 LaxTheme.Spacing.SPACE_16));
-        VBox.setVgrow(header, Priority.NEVER);
+
+        Label header = new Label("LAX MANAGER");
+        header.setStyle("-fx-font-size: " + LaxTheme.Typography.FONT_SIZE_LG
+                + "; -fx-font-weight: bold; -fx-text-fill: white;");
+
+        Region headerSpacer = new Region();
+        HBox.setHgrow(headerSpacer, Priority.ALWAYS);
+
+        Button refreshBtn = new Button("🔄");
+        refreshBtn.setTooltip(new Tooltip("Global Refresh"));
+        refreshBtn.setStyle(
+                "-fx-background-color: transparent; -fx-text-fill: rgba(255,255,255,0.6); -fx-font-size: 16px; -fx-cursor: hand;");
+        refreshBtn.setOnMouseEntered(e -> refreshBtn.setStyle(
+                "-fx-background-color: rgba(255,255,255,0.1); -fx-text-fill: white; -fx-font-size: 16px; -fx-cursor: hand; -fx-background-radius: 4;"));
+        refreshBtn.setOnMouseExited(e -> refreshBtn.setStyle(
+                "-fx-background-color: transparent; -fx-text-fill: rgba(255,255,255,0.6); -fx-font-size: 16px; -fx-cursor: hand;"));
+        refreshBtn.setOnAction(e -> globalRefresh());
+
+        headerContainer.getChildren().addAll(header, headerSpacer, refreshBtn);
+        VBox.setVgrow(headerContainer, Priority.NEVER);
 
         // Navigation items
         VBox navItems = new VBox();
@@ -149,11 +168,11 @@ public class LaxSmeManagerApp {
             showPurchaseHistory();
         });
 
-        Button reportsBtn = createNavButton("📈 Reports", false);
-        reportsBtn.setOnAction(e -> {
-            updateActiveButton(reportsBtn);
-            showReports();
-        });
+        // Button reportsBtn = createNavButton("📈 Reports", false);
+        // reportsBtn.setOnAction(e -> {
+        // updateActiveButton(reportsBtn);
+        // showReports();
+        // });
 
         Button chequeBtn = createNavButton(AppLabel.TITLE_CHEQUE_WIZARD.get(), false);
         chequeBtn.setOnAction(e -> {
@@ -179,9 +198,9 @@ public class LaxSmeManagerApp {
             showVendorManagement();
         });
 
-        navItems.getChildren().addAll(dashboardBtn, entryBtn, historyBtn, chequeBtn, designerBtn, reportsBtn,
+        navItems.getChildren().addAll(dashboardBtn, entryBtn, historyBtn, chequeBtn, designerBtn,
                 vendorsBtn, settingsBtn);
-        sidebar.getChildren().addAll(header, navItems);
+        sidebar.getChildren().addAll(headerContainer, navItems);
 
         return sidebar;
     }
@@ -227,6 +246,8 @@ public class LaxSmeManagerApp {
     private void showDashboard() {
         if (dashboardView == null) {
             dashboardView = new DashboardView(metricsService);
+        } else {
+            dashboardView.refresh();
         }
         contentArea.getChildren().clear();
         contentArea.getChildren().add(dashboardView);
@@ -235,6 +256,8 @@ public class LaxSmeManagerApp {
     private void showPurchaseEntry() {
         if (purchaseEntryView == null) {
             purchaseEntryView = new PurchaseEntryView(vendorCache);
+        } else {
+            purchaseEntryView.refresh();
         }
         contentArea.getChildren().clear();
         contentArea.getChildren().add(purchaseEntryView);
@@ -246,6 +269,8 @@ public class LaxSmeManagerApp {
                     new PurchaseHistoryViewModel(historyService), vendorRepository, vendorCache);
             purchaseHistoryView.setOnPurchaseSelected(this::showPurchaseDetailsDialog);
             purchaseHistoryView.setOnPurchaseEdit(this::showPurchaseEditDialog);
+        } else {
+            purchaseHistoryView.refresh();
         }
         contentArea.getChildren().clear();
         contentArea.getChildren().add(purchaseHistoryView);
@@ -291,6 +316,8 @@ public class LaxSmeManagerApp {
     private void showChequeWizard() {
         if (chequeWizardView == null) {
             chequeWizardView = new ChequeWizardView(new PurchaseRepository(), vendorRepository);
+        } else {
+            chequeWizardView.refresh();
         }
         contentArea.getChildren().clear();
         contentArea.getChildren().add(chequeWizardView);
@@ -304,24 +331,24 @@ public class LaxSmeManagerApp {
         contentArea.getChildren().add(chequeDesignerView);
     }
 
-    private void showReports() {
-        if (reportsView == null) {
-            reportsView = new VBox();
-            reportsView.setStyle(getScreenContentStyle());
-            reportsView.setPadding(new Insets(LaxTheme.Spacing.SPACE_24));
-            reportsView.setSpacing(LaxTheme.Spacing.SPACE_16);
+    // private void showReports() {
+    // if (reportsView == null) {
+    // reportsView = new VBox();
+    // reportsView.setStyle(getScreenContentStyle());
+    // reportsView.setPadding(new Insets(LaxTheme.Spacing.SPACE_24));
+    // reportsView.setSpacing(LaxTheme.Spacing.SPACE_16);
 
-            Label title = new Label("📈 Reports");
-            title.setStyle(getScreenTitleStyle());
+    // Label title = new Label("📈 Reports");
+    // title.setStyle(getScreenTitleStyle());
 
-            Label placeholder = new Label("Reports coming soon...");
-            placeholder.setStyle(getPlaceholderStyle());
+    // Label placeholder = new Label("Reports coming soon...");
+    // placeholder.setStyle(getPlaceholderStyle());
 
-            reportsView.getChildren().addAll(title, placeholder);
-        }
-        contentArea.getChildren().clear();
-        contentArea.getChildren().add(reportsView);
-    }
+    // reportsView.getChildren().addAll(title, placeholder);
+    // }
+    // contentArea.getChildren().clear();
+    // contentArea.getChildren().add(reportsView);
+    // }
 
     private void showSettings() {
         if (settingsView == null) {
@@ -339,9 +366,35 @@ public class LaxSmeManagerApp {
     private void showVendorManagement() {
         if (vendorManagementView == null) {
             vendorManagementView = new VendorManagementView();
+        } else {
+            vendorManagementView.refresh();
         }
         contentArea.getChildren().clear();
         contentArea.getChildren().add(vendorManagementView);
+    }
+
+    private void globalRefresh() {
+        // 1. Reset Caches
+        vendorCache.refreshCache();
+
+        // 2. Clear all cached views to force redesign as requested
+        dashboardView = null;
+        purchaseEntryView = null;
+        purchaseHistoryView = null;
+        reportsView = null;
+        chequeWizardView = null;
+        chequeDesignerView = null;
+        settingsView = null;
+        vendorManagementView = null;
+
+        // 3. Reload current screen
+        if (currentActiveButton != null) {
+            currentActiveButton.fire();
+        }
+
+        // Show toast-like feedback in status bar if we had one,
+        // for now just log it.
+        System.out.println("Global Refresh Complete");
     }
 
     private HBox createStatusBar() {

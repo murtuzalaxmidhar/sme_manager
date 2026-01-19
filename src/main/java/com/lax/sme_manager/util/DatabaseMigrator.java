@@ -13,7 +13,7 @@ import java.sql.Statement;
  */
 public class DatabaseMigrator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseMigrator.class);
-    private static final int CURRENT_VERSION = 2; // Version 2: MM coordinate columns for cheque designer
+    private static final int CURRENT_VERSION = 1; // Version 1: Production Ready Base Schema
 
     public void migrate() {
         try (Connection conn = DatabaseManager.getConnection()) {
@@ -51,10 +51,6 @@ public class DatabaseMigrator {
             if (fromVersion < 1) {
                 LOGGER.info("Executing Phase 1 Schema Creation...");
                 createBaseSchema(stmt);
-            }
-            if (fromVersion < 2) {
-                LOGGER.info("Executing Phase 2 Migration: Adding MM coordinate columns to cheque_templates...");
-                addMmCoordinateColumns(stmt);
             }
         }
     }
@@ -106,8 +102,7 @@ public class DatabaseMigrator {
         // Settings / Config table (for app-internal state if needed)
         stmt.execute("CREATE TABLE IF NOT EXISTS app_config (key TEXT PRIMARY KEY, value TEXT)");
 
-        // Initial table creation if version 1 (not used if version 2 handles it, but
-        // good for new installs)
+        // Initial table creation
         createChequeTemplatesTable(stmt);
     }
 
@@ -125,32 +120,18 @@ public class DatabaseMigrator {
                     signature_x DOUBLE, signature_y DOUBLE,
                     font_size INTEGER DEFAULT 16,
                     font_color TEXT DEFAULT '#000000',
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    date_x_mm REAL,
+                    date_y_mm REAL,
+                    payee_x_mm REAL,
+                    payee_y_mm REAL,
+                    amount_words_x_mm REAL,
+                    amount_words_y_mm REAL,
+                    amount_digits_x_mm REAL,
+                    amount_digits_y_mm REAL,
+                    signature_x_mm REAL,
+                    signature_y_mm REAL
                 )""");
-    }
-
-    private void addMmCoordinateColumns(Statement stmt) throws SQLException {
-        // Add MM coordinate columns for professional designer
-        // Note: Old templates will have NULL values - they can be recreated
-        LOGGER.info("Adding MM coordinate columns to cheque_templates table...");
-
-        try {
-            stmt.execute("ALTER TABLE cheque_templates ADD COLUMN date_x_mm REAL");
-            stmt.execute("ALTER TABLE cheque_templates ADD COLUMN date_y_mm REAL");
-            stmt.execute("ALTER TABLE cheque_templates ADD COLUMN payee_x_mm REAL");
-            stmt.execute("ALTER TABLE cheque_templates ADD COLUMN payee_y_mm REAL");
-            stmt.execute("ALTER TABLE cheque_templates ADD COLUMN amount_words_x_mm REAL");
-            stmt.execute("ALTER TABLE cheque_templates ADD COLUMN amount_words_y_mm REAL");
-            stmt.execute("ALTER TABLE cheque_templates ADD COLUMN amount_digits_x_mm REAL");
-            stmt.execute("ALTER TABLE cheque_templates ADD COLUMN amount_digits_y_mm REAL");
-            stmt.execute("ALTER TABLE cheque_templates ADD COLUMN signature_x_mm REAL");
-            stmt.execute("ALTER TABLE cheque_templates ADD COLUMN signature_y_mm REAL");
-
-            LOGGER.info("MM coordinate columns added successfully.  Old templates can be recreated.");
-        } catch (SQLException e) {
-            // Columns might already exist if migration was attempted before
-            LOGGER.warn("Some columns may already exist, continuing: {}", e.getMessage());
-        }
     }
 
     private void updateVersion(Connection conn, int version) throws SQLException {

@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ChequeWizardView extends VBox {
+public class ChequeWizardView extends VBox implements RefreshableView {
 
     private final IPurchaseRepository purchaseRepository;
     private final VendorRepository vendorRepository;
@@ -648,5 +648,10 @@ public class ChequeWizardView extends VBox {
         public boolean isSelected() {
             return selected.get();
         }
+    }
+
+    @Override
+    public void refresh() {
+        loadAllUnpaidEntries();
     }
 }

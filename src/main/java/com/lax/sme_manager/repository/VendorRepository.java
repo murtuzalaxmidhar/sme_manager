@@ -19,7 +19,7 @@ public class VendorRepository {
     public List<VendorEntity> findAll() {
         String sql = """
                 SELECT id, name, contact_person, address,
-                       phone, email, notes,
+                       phone, email, notes, is_deleted,
                        created_at, updated_at
                 FROM vendors
                 WHERE (is_deleted = 0 OR is_deleted IS NULL)
@@ -44,7 +44,7 @@ public class VendorRepository {
 
     public List<Vendor> findAllVendors() {
         String sql = """
-                SELECT id, name
+                SELECT id, name, is_deleted
                 FROM vendors
                 WHERE (is_deleted = 0 OR is_deleted IS NULL)
                 ORDER BY name
@@ -112,7 +112,7 @@ public class VendorRepository {
             ps.setString(2, e.getContactPerson());
             ps.setString(3, e.getAddress());
             ps.setString(4, e.getPhone());
-            ps.setString(5, e.getAddress());
+            ps.setString(5, e.getEmail());
             ps.setString(6, e.getNotes());
             ps.setObject(7, e.getCreatedAt());
             ps.setObject(8, e.getUpdatedAt());

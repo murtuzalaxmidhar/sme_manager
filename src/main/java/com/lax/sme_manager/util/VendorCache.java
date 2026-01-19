@@ -40,7 +40,7 @@ public class VendorCache {
      * Get all vendors from cache (zero DB hit)
      */
     public ObservableList<Vendor> getAllVendors() {
-        return FXCollections.observableArrayList(allVendors);
+        return allVendors;
     }
 
     // Alias for consistence with some view usage
