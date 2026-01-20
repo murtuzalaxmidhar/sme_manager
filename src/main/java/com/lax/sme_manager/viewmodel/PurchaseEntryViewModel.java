@@ -241,7 +241,7 @@ public class PurchaseEntryViewModel {
         weight.set("0");
         isLumpsum.set(false);
         advancePaid.set(false);
-        paymentMode.set("CASH");
+        paymentMode.set("CHEQUE");
         notes.set("");
         // Fees reset by advancePaid listener, but ensuring defaults:
         marketFeePercent.set("0.70");
