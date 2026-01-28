@@ -1,5 +1,5 @@
 @echo off
-set VERSION=1.0
+set VERSION=2.0
 set MAIN_CLASS=com.lax.sme_manager.LaxSmeManagerStarter
 set APP_NAME="Lax Yard & SME Manager"
 set VENDOR="RASolutions"

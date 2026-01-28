@@ -10,7 +10,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
-import com.lax.sme_manager.util.DatabaseManager;
 import com.lax.sme_manager.util.BackupService;
 import com.lax.sme_manager.repository.PurchaseRepository;
 import com.lax.sme_manager.service.MetricsService;
@@ -23,7 +22,6 @@ import com.lax.sme_manager.viewmodel.PurchaseHistoryViewModel;
 import com.lax.sme_manager.ui.view.PurchaseDetailView;
 import com.lax.sme_manager.domain.Vendor;
 import com.lax.sme_manager.repository.model.PurchaseEntity;
-import com.lax.sme_manager.ui.component.UIStyles;
 import com.lax.sme_manager.util.i18n.AppLabel;
 import com.lax.sme_manager.ui.view.PurchaseEditView;
 import com.lax.sme_manager.ui.view.SettingsView;
@@ -95,7 +93,7 @@ public class LaxSmeManagerApp {
         // Scene setup
         Scene scene = new Scene(root, 1400, 800);
         stage.setScene(scene);
-        stage.setTitle("Lax SME Manager - Purchase System");
+        stage.setTitle("Lax Yard & SME Manager v2.0");
 
         // Backup on close
         stage.setOnCloseRequest(e -> {
@@ -266,7 +264,7 @@ public class LaxSmeManagerApp {
     private void showPurchaseHistory() {
         if (purchaseHistoryView == null) {
             purchaseHistoryView = new PurchaseHistoryView(
-                    new PurchaseHistoryViewModel(historyService), vendorRepository, vendorCache);
+                    new PurchaseHistoryViewModel(historyService), vendorRepository);
             purchaseHistoryView.setOnPurchaseSelected(this::showPurchaseDetailsDialog);
             purchaseHistoryView.setOnPurchaseEdit(this::showPurchaseEditDialog);
         } else {

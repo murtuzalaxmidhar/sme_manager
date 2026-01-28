@@ -47,40 +47,41 @@ public class PurchaseEntryView extends VBox implements RefreshableView {
     }
 
     private void initializeUI() {
-        setSpacing(LaxTheme.Spacing.SPACE_24);
-        setPadding(new Insets(LaxTheme.Layout.MAIN_CONTAINER_PADDING)); // Design Manifest: 25px
+        setSpacing(LaxTheme.Spacing.SPACE_12); // Compact spacing
+        setPadding(new Insets(12)); // Compact padding
         setStyle("-fx-background-color: transparent; -fx-background: " + LaxTheme.Colors.LIGHT_GRAY + ";");
 
         // Header
         Label titleLabel = new Label(AppLabel.TITLE_PURCHASE_ENTRY.get());
         titleLabel.setStyle(UIStyles.getTitleStyle());
 
-        // I18N Binding: Update text when language changes
-        // Since we are not using Properties in AppLabel yet (simplification),
-        // we might not get auto-update unless reloaded.
-        // But for "Senior Architect" code, ideally everything binds.
-        // For now, let's keep it simple: The UI is created once. User might need to
-        // restart or we assume limited dynamic switching for complex forms.
-        // However, I will make the Title dynamic at least as a proof of concept.
+        // Status Banner (Top)
+        statusLabel = new Label();
+        statusLabel.setStyle(UIStyles.getStatusStyle());
+        statusLabel.setMaxWidth(Double.MAX_VALUE);
+        statusLabel.setVisible(false); // Hidden by default
+        statusLabel.managedProperty().bind(statusLabel.visibleProperty()); // Auto-collapse
 
         // Main Layout
-        HBox mainContent = new HBox(LaxTheme.Spacing.SPACE_40); // Increased gutter
+        HBox mainContent = new HBox(LaxTheme.Spacing.SPACE_20); // Reduced gutter
         VBox formSection = createFormSection();
         HBox.setHgrow(formSection, Priority.ALWAYS);
 
         VBox summarySection = createSummarySection();
-        summarySection.setPrefWidth(360);
-        summarySection.setMinWidth(360);
+        summarySection.setPrefWidth(320); // Slightly more compact
+        summarySection.setMinWidth(320);
         HBox.setHgrow(summarySection, Priority.NEVER);
 
         mainContent.getChildren().addAll(formSection, summarySection);
 
-        // Status Bar
-        statusLabel = new Label();
-        statusLabel.setStyle(UIStyles.getStatusStyle()); // Default style
-        statusLabel.setMaxWidth(Double.MAX_VALUE);
+        // Global ScrollPane
+        ScrollPane scrollPane = new ScrollPane(mainContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true); // Ensure full height logic if needed, but fitToWidth is key
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0;");
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        getChildren().addAll(titleLabel, mainContent, statusLabel);
+        getChildren().addAll(titleLabel, statusLabel, scrollPane);
     }
 
     private VBox createFormSection() {
@@ -115,13 +116,15 @@ public class PurchaseEntryView extends VBox implements RefreshableView {
 
         // -- Row 2: Bags & Rate --
         TextField bagsField = new TextField();
-        bagsField.setTextFormatter(NumericTextFormatter.integerOnly()); // Only integers for bags
+        bagsField.setTextFormatter(NumericTextFormatter.integerOnly());
         bagsField.textProperty().bindBidirectional(viewModel.bags);
+        UIComponents.addAutoClearOnFocus(bagsField); // Auto-clear
         VBox bagsBox = UIComponents.createLabeledTextField(AppLabel.LBL_BAGS.get(), true, bagsField);
 
         TextField rateField = new TextField();
-        rateField.setTextFormatter(NumericTextFormatter.decimalOnly(2)); // Max 2 decimals for rate
+        rateField.setTextFormatter(NumericTextFormatter.decimalOnly(2));
         rateField.textProperty().bindBidirectional(viewModel.rate);
+        UIComponents.addAutoClearOnFocus(rateField); // Auto-clear
         VBox rateBox = UIComponents.createLabeledTextField(AppLabel.LBL_RATE.get(), false,
                 rateField);
 
@@ -129,10 +132,10 @@ public class PurchaseEntryView extends VBox implements RefreshableView {
 
         // -- Row 3: Weight & Lumpsum --
         TextField weightField = new TextField();
-        weightField.setTextFormatter(NumericTextFormatter.decimalOnly(2)); // Max 2 decimals for weight
+        weightField.setTextFormatter(NumericTextFormatter.decimalOnly(2));
         weightField.textProperty().bindBidirectional(viewModel.weight);
-        // Weight Disable Binding
         weightField.disableProperty().bind(viewModel.isLumpsum);
+        UIComponents.addAutoClearOnFocus(weightField); // Auto-clear
         VBox weightBox = UIComponents.createLabeledTextField(AppLabel.LBL_WEIGHT.get(), false,
                 weightField);
 
@@ -411,7 +414,13 @@ public class PurchaseEntryView extends VBox implements RefreshableView {
                 statusLabel.setStyle(UIStyles.getErrorStatusStyle());
             else
                 statusLabel.setStyle(UIStyles.getSuccessStatusStyle());
+
+            // Show status when message changes (and not empty)
+            statusLabel.setVisible(!statusLabel.getText().isEmpty());
         });
+
+        // Hide status when clicked (dismiss)
+        statusLabel.setOnMouseClicked(e -> statusLabel.setVisible(false));
     }
 
     @Override

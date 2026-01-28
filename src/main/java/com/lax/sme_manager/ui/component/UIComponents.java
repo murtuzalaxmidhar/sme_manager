@@ -314,6 +314,20 @@ public class UIComponents {
         });
     }
 
+    /**
+     * Adds a listener to clear the field if it contains "0" or "0.0" when focused.
+     */
+    public static void addAutoClearOnFocus(TextField textField) {
+        textField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (isNowFocused) {
+                String text = textField.getText();
+                if ("0".equals(text) || "0.0".equals(text)) {
+                    textField.setText("");
+                }
+            }
+        });
+    }
+
     // === STYLING HELPERS ===
     private static String getLabelStyle() {
         return String.format("-fx-font-size: 14; -fx-font-weight: 550; -fx-text-fill: %s; -fx-letter-spacing: -0.2px;",

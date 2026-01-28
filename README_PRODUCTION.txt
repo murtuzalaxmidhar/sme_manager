@@ -29,5 +29,5 @@ In case of a computer failure, you can simply paste this file back into the same
 For any support or bug reports, please contact RASolutions.
 
 ========================================
-Version 1.0 (Production Ready)
+Version 2.0 (Premium Upgrade)
 Developed by RASolutions

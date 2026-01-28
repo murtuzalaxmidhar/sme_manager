@@ -44,8 +44,8 @@ public class VendorManagementView extends VBox implements RefreshableView {
     }
 
     private void initializeUI() {
-        setPadding(new Insets(LaxTheme.Layout.MAIN_CONTAINER_PADDING));
-        setSpacing(LaxTheme.Spacing.SPACE_24);
+        setPadding(new Insets(12)); // Compact padding
+        setSpacing(LaxTheme.Spacing.SPACE_12); // Compact spacing
         setStyle("-fx-background-color: transparent; -fx-background: " + LaxTheme.Colors.LIGHT_GRAY + ";");
 
         // Header section
@@ -77,9 +77,20 @@ public class VendorManagementView extends VBox implements RefreshableView {
 
         // Vendor table
         vendorTable = createVendorTable();
+        // Allow table to grow
         VBox.setVgrow(vendorTable, Priority.ALWAYS);
 
-        getChildren().addAll(title, controls, vendorTable);
+        // Main Layout Container
+        VBox mainLayout = new VBox(12, title, controls, vendorTable);
+
+        // Global ScrollPane
+        ScrollPane scrollPane = new ScrollPane(mainLayout);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0;");
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
+        getChildren().add(scrollPane);
     }
 
     private TableView<VendorEntity> createVendorTable() {
