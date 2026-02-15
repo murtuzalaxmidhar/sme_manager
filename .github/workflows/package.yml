@@ -55,3 +55,30 @@ jobs:
       with:
         name: Windows-MSI-Installer
         path: build/dist/*.msi
+
+    - name: Upload MSI to Google Drive
+      uses: adityak74/google-drive-upload-git-action@main
+      with:
+        credentials: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON_BASE64 }}
+        filename: "build/dist/*.msi"
+        folderId: ${{ secrets.GDRIVE_FOLDER_ID }}
+        overwrite: "true"
+
+    - name: Email Notification (via Gmail)
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.MAIL_USERNAME }}
+        password: ${{ secrets.MAIL_PASSWORD }}
+        subject: "📦 Lax SME Manager: New Update Available"
+        to: "laxmidharmurtuza11072@gmail.com"
+        from: "Lax Manager CI"
+        body: |
+          Hi,
+
+          A new version of the Yard Manager software (Build #${{ github.run_number }}) is now ready on your Google Drive.
+
+          Notes: ${{ github.event.head_commit.message }}
+
+          Please install it at your convenience.
