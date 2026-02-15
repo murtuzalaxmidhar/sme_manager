@@ -1,6 +1,5 @@
 package com.lax.sme_manager.viewmodel;
 
-import com.lax.sme_manager.domain.Vendor;
 import com.lax.sme_manager.repository.model.PurchaseEntity;
 import com.lax.sme_manager.service.PurchaseHistoryService;
 import com.lax.sme_manager.ui.state.PurchaseHistoryFilterState;
@@ -23,6 +22,7 @@ public class PurchaseHistoryViewModel {
 
     // Data List
     public final ObservableList<PurchaseEntity> purchaseList = FXCollections.observableArrayList();
+    public final ObservableList<PurchaseEntity> selectedPurchases = FXCollections.observableArrayList();
 
     // Status
     public final BooleanProperty isLoading = new SimpleBooleanProperty(false);
@@ -65,7 +65,7 @@ public class PurchaseHistoryViewModel {
                 List<PurchaseEntity> data = historyService.fetchPurchases(
                         filterState.filterStartDate.get(),
                         filterState.filterEndDate.get(),
-                        filterState.filterVendorId.get() == -1 ? null : filterState.filterVendorId.get(),
+                        filterState.filterVendorIds,
                         filterState.filterMinAmount.get(),
                         filterState.filterMaxAmount.get(),
                         filterState.filterChequeIssued.get(),
@@ -75,7 +75,7 @@ public class PurchaseHistoryViewModel {
                 int filteredCount = historyService.getTotalFilteredCount(
                         filterState.filterStartDate.get(),
                         filterState.filterEndDate.get(),
-                        filterState.filterVendorId.get() == -1 ? null : filterState.filterVendorId.get(),
+                        filterState.filterVendorIds,
                         filterState.filterMinAmount.get(),
                         filterState.filterMaxAmount.get(),
                         filterState.filterChequeIssued.get());
@@ -137,6 +137,23 @@ public class PurchaseHistoryViewModel {
             statusMessage.set("Entry deleted successfully.");
         })).exceptionally(ex -> {
             Platform.runLater(() -> statusMessage.set("Error deleting: " + ex.getMessage()));
+            return null;
+        });
+    }
+
+    public void deleteSelectedPurchases() {
+        if (selectedPurchases.isEmpty())
+            return;
+
+        List<Integer> ids = selectedPurchases.stream().map(PurchaseEntity::getId).toList();
+        CompletableFuture.runAsync(() -> {
+            historyService.deletePurchases(ids);
+        }).thenRun(() -> Platform.runLater(() -> {
+            selectedPurchases.clear();
+            loadPurchases();
+            statusMessage.set("Selected entries deleted successfully.");
+        })).exceptionally(ex -> {
+            Platform.runLater(() -> statusMessage.set("Error bulk deleting: " + ex.getMessage()));
             return null;
         });
     }

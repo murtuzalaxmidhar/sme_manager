@@ -24,9 +24,8 @@ import com.lax.sme_manager.domain.Vendor;
 import com.lax.sme_manager.repository.model.PurchaseEntity;
 import com.lax.sme_manager.util.i18n.AppLabel;
 import com.lax.sme_manager.ui.view.PurchaseEditView;
+import com.lax.sme_manager.ui.view.ChequeWriterView; // Import
 import com.lax.sme_manager.ui.view.SettingsView;
-import com.lax.sme_manager.ui.view.ChequeWizardView;
-import com.lax.sme_manager.ui.view.ChequeDesignerView;
 import com.lax.sme_manager.ui.view.VendorManagementView;
 
 /**
@@ -51,11 +50,9 @@ public class LaxSmeManagerApp {
     private DashboardView dashboardView;
     private PurchaseEntryView purchaseEntryView;
     private PurchaseHistoryView purchaseHistoryView;
-    private VBox reportsView;
-    private ChequeWizardView chequeWizardView;
-    private ChequeDesignerView chequeDesignerView;
     private SettingsView settingsView;
     private VendorManagementView vendorManagementView;
+    private ChequeWriterView chequeWriterView;
 
     public LaxSmeManagerApp(Stage stage) {
         this.stage = stage;
@@ -172,18 +169,6 @@ public class LaxSmeManagerApp {
         // showReports();
         // });
 
-        Button chequeBtn = createNavButton(AppLabel.TITLE_CHEQUE_WIZARD.get(), false);
-        chequeBtn.setOnAction(e -> {
-            updateActiveButton(chequeBtn);
-            showChequeWizard();
-        });
-
-        Button designerBtn = createNavButton(AppLabel.TITLE_CHEQUE_DESIGNER.get(), false);
-        designerBtn.setOnAction(e -> {
-            updateActiveButton(designerBtn);
-            showChequeDesigner();
-        });
-
         Button settingsBtn = createNavButton(AppLabel.TITLE_SETTINGS.get(), false);
         settingsBtn.setOnAction(e -> {
             updateActiveButton(settingsBtn);
@@ -196,8 +181,14 @@ public class LaxSmeManagerApp {
             showVendorManagement();
         });
 
-        navItems.getChildren().addAll(dashboardBtn, entryBtn, historyBtn, chequeBtn, designerBtn,
-                vendorsBtn, settingsBtn);
+        Button chequeWriterBtn = createNavButton("Cheque Writer", false);
+        chequeWriterBtn.setOnAction(e -> {
+            updateActiveButton(chequeWriterBtn);
+            showChequeWriter();
+        });
+
+        navItems.getChildren().addAll(dashboardBtn, entryBtn, historyBtn,
+                vendorsBtn, chequeWriterBtn, settingsBtn);
         sidebar.getChildren().addAll(headerContainer, navItems);
 
         return sidebar;
@@ -311,24 +302,6 @@ public class LaxSmeManagerApp {
         dialog.showAndWait();
     }
 
-    private void showChequeWizard() {
-        if (chequeWizardView == null) {
-            chequeWizardView = new ChequeWizardView(new PurchaseRepository(), vendorRepository);
-        } else {
-            chequeWizardView.refresh();
-        }
-        contentArea.getChildren().clear();
-        contentArea.getChildren().add(chequeWizardView);
-    }
-
-    private void showChequeDesigner() {
-        if (chequeDesignerView == null) {
-            chequeDesignerView = new ChequeDesignerView();
-        }
-        contentArea.getChildren().clear();
-        contentArea.getChildren().add(chequeDesignerView);
-    }
-
     // private void showReports() {
     // if (reportsView == null) {
     // reportsView = new VBox();
@@ -347,6 +320,14 @@ public class LaxSmeManagerApp {
     // contentArea.getChildren().clear();
     // contentArea.getChildren().add(reportsView);
     // }
+
+    private void showChequeWriter() {
+        if (chequeWriterView == null) {
+            chequeWriterView = new ChequeWriterView();
+        }
+        contentArea.getChildren().clear();
+        contentArea.getChildren().add(chequeWriterView);
+    }
 
     private void showSettings() {
         if (settingsView == null) {
@@ -379,9 +360,6 @@ public class LaxSmeManagerApp {
         dashboardView = null;
         purchaseEntryView = null;
         purchaseHistoryView = null;
-        reportsView = null;
-        chequeWizardView = null;
-        chequeDesignerView = null;
         settingsView = null;
         vendorManagementView = null;
 
@@ -485,26 +463,4 @@ public class LaxSmeManagerApp {
                 LaxTheme.Sidebar.BUTTON_MIN_HEIGHT);
     }
 
-    private String getScreenContentStyle() {
-        return String.format(
-                "-fx-background-color: %s;",
-                LaxTheme.Colors.LIGHT_GRAY);
-    }
-
-    private String getScreenTitleStyle() {
-        return String.format(
-                "-fx-font-size: %d; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-text-fill: %s;",
-                LaxTheme.Typography.FONT_SIZE_2XL,
-                LaxTheme.Colors.TEXT_PRIMARY);
-    }
-
-    private String getPlaceholderStyle() {
-        return String.format(
-                "-fx-font-size: %d; " +
-                        "-fx-text-fill: %s;",
-                LaxTheme.Typography.FONT_SIZE_MD,
-                LaxTheme.Colors.TEXT_SECONDARY);
-    }
 }

@@ -38,15 +38,15 @@ public class PurchaseHistoryService {
     public List<PurchaseEntity> fetchPurchases(
             LocalDate startDate,
             LocalDate endDate,
-            Integer vendorId,
+            List<Integer> vendorIds,
             BigDecimal minAmount,
             BigDecimal maxAmount,
             Boolean chequeIssued,
             int pageNumber) {
 
         try {
-            LOGGER.info("Fetching purchases - Page: {}, Vendor: {}, Range: {} to {}",
-                    pageNumber, vendorId, startDate, endDate);
+            LOGGER.info("Fetching purchases - Page: {}, Vendors: {}, Range: {} to {}",
+                    pageNumber, vendorIds, startDate, endDate);
 
             // Fetch from repository (implement filtering in SQL/DB layer)
             List<PurchaseEntity> purchases = purchaseRepository.findAll();
@@ -54,7 +54,7 @@ public class PurchaseHistoryService {
             // In-memory filtering if DB doesn't support all criteria
             List<PurchaseEntity> filtered = purchases.stream()
                     .filter(p -> isWithinDateRange(p, startDate, endDate))
-                    .filter(p -> vendorId == null || p.getVendorId() == vendorId)
+                    .filter(p -> vendorIds == null || vendorIds.isEmpty() || vendorIds.contains(p.getVendorId()))
                     .filter(p -> isWithinAmountRange(p, minAmount, maxAmount))
                     .filter(p -> chequeIssued == null || isMatchesChequeFilter(p, chequeIssued))
                     .toList();
@@ -84,7 +84,7 @@ public class PurchaseHistoryService {
     public int getTotalFilteredCount(
             LocalDate startDate,
             LocalDate endDate,
-            Integer vendorId,
+            List<Integer> vendorIds,
             BigDecimal minAmount,
             BigDecimal maxAmount,
             Boolean chequeIssued) {
@@ -94,7 +94,7 @@ public class PurchaseHistoryService {
 
             return (int) purchases.stream()
                     .filter(p -> isWithinDateRange(p, startDate, endDate))
-                    .filter(p -> vendorId == null || p.getVendorId() == vendorId)
+                    .filter(p -> vendorIds == null || vendorIds.isEmpty() || vendorIds.contains(p.getVendorId()))
                     .filter(p -> isWithinAmountRange(p, minAmount, maxAmount))
                     .filter(p -> chequeIssued == null || isMatchesChequeFilter(p, chequeIssued))
                     .count();
@@ -143,6 +143,20 @@ public class PurchaseHistoryService {
             LOGGER.info("Soft-deleted purchase ID: {}", id);
         } catch (Exception e) {
             LOGGER.error("Error soft-deleting purchase ID: {}", id, e);
+            throw e;
+        }
+    }
+
+    public void deletePurchases(List<Integer> ids) {
+        if (ids == null || ids.isEmpty())
+            return;
+        try {
+            for (Integer id : ids) {
+                purchaseRepository.delete(id);
+            }
+            LOGGER.info("Soft-deleted {} purchases", ids.size());
+        } catch (Exception e) {
+            LOGGER.error("Error bulk soft-deleting purchases", e);
             throw e;
         }
     }

@@ -13,7 +13,7 @@ import java.sql.Statement;
  */
 public class DatabaseMigrator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseMigrator.class);
-    private static final int CURRENT_VERSION = 1; // Version 1: Production Ready Base Schema
+    private static final int CURRENT_VERSION = 2; // Version 2: Cheque Printing Module Recode
 
     public void migrate() {
         try (Connection conn = DatabaseManager.getConnection()) {
@@ -50,7 +50,12 @@ public class DatabaseMigrator {
         try (Statement stmt = conn.createStatement()) {
             if (fromVersion < 1) {
                 LOGGER.info("Executing Phase 1 Schema Creation...");
+                LOGGER.info("Executing Phase 1 Schema Creation...");
                 createBaseSchema(stmt);
+            }
+            if (fromVersion < 2) {
+                LOGGER.info("Executing Phase 2 Migration (Cheque Module)...");
+                migrateToV2(stmt);
             }
         }
     }
@@ -132,6 +137,50 @@ public class DatabaseMigrator {
                     signature_x_mm REAL,
                     signature_y_mm REAL
                 )""");
+    }
+
+    private void migrateToV2(Statement stmt) throws SQLException {
+        // 1. Drop legacy table
+        stmt.execute("DROP TABLE IF EXISTS cheque_templates");
+
+        // 2. Create new config table
+        stmt.execute("""
+                CREATE TABLE IF NOT EXISTS cheque_config (
+                    id INTEGER PRIMARY KEY,
+                    bank_name TEXT DEFAULT 'Default Bank',
+                    is_ac_payee BOOLEAN DEFAULT 1,
+                    font_size INTEGER DEFAULT 12,
+                    date_x DOUBLE DEFAULT 150.0,
+                    date_y DOUBLE DEFAULT 10.0,
+                    payee_x DOUBLE DEFAULT 20.0,
+                    payee_y DOUBLE DEFAULT 40.0,
+                    amount_words_x DOUBLE DEFAULT 20.0,
+                    amount_words_y DOUBLE DEFAULT 55.0,
+                    amount_digits_x DOUBLE DEFAULT 150.0,
+                    amount_digits_y DOUBLE DEFAULT 50.0,
+                    signature_x DOUBLE DEFAULT 150.0,
+                    signature_y DOUBLE DEFAULT 70.0,
+                    signature_path TEXT,
+                    active_signature_id INTEGER DEFAULT 0
+                )""");
+
+        stmt.execute("""
+                CREATE TABLE IF NOT EXISTS signatures (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    path TEXT NOT NULL,
+                    opacity DOUBLE DEFAULT 1.0,
+                    thickness DOUBLE DEFAULT 1.0,
+                    is_transparent INTEGER DEFAULT 1,
+                    scale DOUBLE DEFAULT 1.0
+                )""");
+
+        // 3. Seed default config
+        stmt.execute(
+                """
+                        INSERT INTO cheque_config (id, bank_name, is_ac_payee, font_size, date_x, date_y, payee_x, payee_y, amount_words_x, amount_words_y, amount_digits_x, amount_digits_y, signature_x, signature_y)
+                        VALUES (1, 'Default Bank', 1, 12, 160.0, 15.0, 30.0, 45.0, 30.0, 60.0, 160.0, 55.0, 150.0, 70.0)
+                        """);
     }
 
     private void updateVersion(Connection conn, int version) throws SQLException {

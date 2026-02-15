@@ -9,10 +9,9 @@ public enum AppLabel {
     // Titles
     TITLE_PURCHASE_ENTRY("➕ Purchase Entry", null),
     TITLE_PURCHASE_HISTORY("📋 Purchase History", null),
-    TITLE_CHEQUE_WIZARD("🖋️ Print Cheque", "🖋️ ચેક પ્રિન્ટ"),
     TITLE_DASHBOARD("📊 Dashboard", null),
     TITLE_SETTINGS("⚙️ Settings", null),
-    TITLE_CHEQUE_DESIGNER("🎨 Cheque Designer", "ચેક ડિઝાઇનર"),
+    TITLE_CHEQUE_PREVIEW("🖋️ Cheque Preview", "ચેક પ્રિવ્યુ"),
     TITLE_PURCHASE_DETAILS("Purchase Details", null),
 
     // Actions & Buttons
@@ -48,13 +47,10 @@ public enum AppLabel {
     // Misc
     MSG_LOADING("Loading...", "\u0AB2\u0ACB\u0AA1 \u0AA5\u0A88 \u0AB0\u0AB9\u0acd\u0AAF\u0AC1\u0A82"),
 
-    
     // Wizard Specific
-    WIZARD_STEP_1("Step 1: Select Vendor & Entries", "પગલું ૧: વેપારી અને વિગત પસંદ કરો"),
-    WIZARD_STEP_2("Step 2: Write Individual Cheques", "પગલું ૨: ચેક લખો"),
-    LBL_CHQ_NUMBER("Cheque Number", "ચેક નંબર"),
-    LBL_CHQ_STEP_X_OF_Y("Cheque %d of %d", "ચેક %d માં થી %d"),
-    ACTION_START_CHQ_WRITING("Start Writing Cheques →", "ચેક લખવાનું શરૂ કરો →");
+    ACTION_PRINT_CHEQUE("Print Cheque", "ચેક પ્રિન્ટ"),
+    LBL_AMOUNT_WORDS("Amount in Words", "અંકે રૂપિયા"),
+    LBL_SIGNATURE_CONFIG("Signature Config", "સહી સેટિંગ્સ");
 
     private final String english;
     private final String gujarati;

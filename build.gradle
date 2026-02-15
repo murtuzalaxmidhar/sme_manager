@@ -45,6 +45,9 @@ dependencies {
     implementation 'org.apache.poi:poi:5.2.5'
     implementation 'org.apache.poi:poi-ooxml:5.2.5'
 
+    // Apache PDFBox
+    implementation 'org.apache.pdfbox:pdfbox:2.0.30'
+
 }
 
 javafx {
