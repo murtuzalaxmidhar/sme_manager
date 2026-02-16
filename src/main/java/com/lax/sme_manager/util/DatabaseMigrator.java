@@ -13,7 +13,7 @@ import java.sql.Statement;
  */
 public class DatabaseMigrator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseMigrator.class);
-    private static final int CURRENT_VERSION = 2; // Version 2: Cheque Printing Module Recode
+    private static final int CURRENT_VERSION = 4; // Version 4: Signature Compatibility Fix
 
     public void migrate() {
         try (Connection conn = DatabaseManager.getConnection()) {
@@ -50,13 +50,42 @@ public class DatabaseMigrator {
         try (Statement stmt = conn.createStatement()) {
             if (fromVersion < 1) {
                 LOGGER.info("Executing Phase 1 Schema Creation...");
-                LOGGER.info("Executing Phase 1 Schema Creation...");
                 createBaseSchema(stmt);
             }
             if (fromVersion < 2) {
                 LOGGER.info("Executing Phase 2 Migration (Cheque Module)...");
                 migrateToV2(stmt);
             }
+            if (fromVersion < 3) {
+                LOGGER.info("Executing Phase 3 Migration (Expert Date)...");
+                migrateToV3(stmt);
+            }
+            if (fromVersion < 4) {
+                LOGGER.info("Executing Phase 4 Migration (Signature Fix)...");
+                migrateToV4(stmt);
+            }
+        }
+    }
+
+    private void migrateToV3(Statement stmt) throws SQLException {
+        try {
+            stmt.execute("ALTER TABLE cheque_config ADD COLUMN date_positions TEXT");
+        } catch (SQLException e) {
+            LOGGER.warn("date_positions column already exists.");
+        }
+    }
+
+    private void migrateToV4(Statement stmt) throws SQLException {
+        try {
+            stmt.execute("ALTER TABLE cheque_config ADD COLUMN active_signature_id INTEGER DEFAULT 0");
+        } catch (SQLException e) {
+            LOGGER.warn("active_signature_id column already exists.");
+        }
+        try {
+            stmt.execute("ALTER TABLE cheque_config ADD COLUMN signature_x DOUBLE DEFAULT 150.0");
+            stmt.execute("ALTER TABLE cheque_config ADD COLUMN signature_y DOUBLE DEFAULT 75.0");
+        } catch (SQLException e) {
+            LOGGER.warn("signature_x/y columns already exist.");
         }
     }
 

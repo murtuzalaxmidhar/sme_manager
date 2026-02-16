@@ -177,6 +177,17 @@ public class SettingsView extends VBox {
             name.setPrefWidth(120);
             name.setStyle("-fx-font-size: 12px;");
 
+            Button btnActive = new Button(chequeConfig.getActiveSignatureId() == sig.getId() ? "✅ Active" : "Set Active");
+            btnActive.setStyle(chequeConfig.getActiveSignatureId() == sig.getId() 
+                ? "-fx-background-color: #0d9488; -fx-text-fill: white;" 
+                : LaxTheme.getButtonStyle(LaxTheme.ButtonType.SECONDARY));
+            btnActive.setOnAction(e -> {
+                chequeConfig.setActiveSignatureId(sig.getId());
+                configRepo.saveConfig(chequeConfig);
+                loadSignatures();
+                new Alert(Alert.AlertType.INFORMATION, "Signature set as active for printing.").show();
+            });
+
             Button btnSelect = new Button("⚙️");
             btnSelect.setTooltip(new Tooltip("Edit Tuning"));
             btnSelect.setOnAction(e -> selectSignature(sig));
@@ -185,10 +196,14 @@ public class SettingsView extends VBox {
             btnDel.setStyle("-fx-text-fill: #ef4444; -fx-background-color: transparent;");
             btnDel.setOnAction(e -> {
                 sigRepo.deleteSignature(sig.getId());
+                if (chequeConfig.getActiveSignatureId() == sig.getId()) {
+                    chequeConfig.setActiveSignatureId(0);
+                    configRepo.saveConfig(chequeConfig);
+                }
                 loadSignatures();
             });
 
-            item.getChildren().addAll(name, btnSelect, btnDel);
+            item.getChildren().addAll(name, btnActive, btnSelect, btnDel);
             signatureList.getChildren().add(item);
         }
     }

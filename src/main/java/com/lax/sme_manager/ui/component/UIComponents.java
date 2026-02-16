@@ -70,7 +70,8 @@ public class UIComponents {
         inputRow.setAlignment(Pos.CENTER_LEFT);
         percentField.setPrefWidth(80);
         percentField.setPrefHeight(STANDARD_INPUT_HEIGHT);
-        percentField.setStyle(getInputStyle() + " -fx-prompt-text: %; -fx-background-color: #f8fafc;");
+        percentField.setPromptText("%");
+        percentField.setStyle(getInputStyle() + " -fx-background-color: #f8fafc;");
         applyNumericValidation(percentField, true); // Decimal validation
 
         toggleButton.setPrefWidth(70);
@@ -330,7 +331,7 @@ public class UIComponents {
 
     // === STYLING HELPERS ===
     private static String getLabelStyle() {
-        return String.format("-fx-font-size: 14; -fx-font-weight: 550; -fx-text-fill: %s; -fx-letter-spacing: -0.2px;",
+        return String.format("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: %s; -fx-letter-spacing: -0.2px;",
                 LaxTheme.Colors.TEXT_SECONDARY);
     }
 

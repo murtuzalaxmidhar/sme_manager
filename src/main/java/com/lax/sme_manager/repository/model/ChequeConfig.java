@@ -14,6 +14,7 @@ public class ChequeConfig {
     private String bankName;
     private boolean isAcPayee;
     private int fontSize;
+    private int activeSignatureId;
 
     // Coordinates in mm (Millimeters)
     private double dateX;
@@ -32,4 +33,10 @@ public class ChequeConfig {
     private double signatureY;
 
     private String signaturePath; // Path to signature image
+
+    /**
+     * Stores individual digit positions as JSON or CSV
+     * Format: "x,y;x,y;..." for 8 digits
+     */
+    private String datePositions;
 }

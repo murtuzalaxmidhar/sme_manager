@@ -38,7 +38,8 @@ public class ChequeConfigRepository {
                 amount_words_x=?, amount_words_y=?,
                 amount_digits_x=?, amount_digits_y=?,
                 signature_x=?, signature_y=?,
-                signature_path=?
+                signature_path=?, date_positions=?,
+                active_signature_id=?
                 WHERE id = 1
                 """;
 
@@ -59,6 +60,8 @@ public class ChequeConfigRepository {
             pstmt.setDouble(12, config.getSignatureX());
             pstmt.setDouble(13, config.getSignatureY());
             pstmt.setString(14, config.getSignaturePath());
+            pstmt.setString(15, config.getDatePositions());
+            pstmt.setInt(16, config.getActiveSignatureId());
 
             int rows = pstmt.executeUpdate();
             if (rows == 0) {
@@ -80,8 +83,9 @@ public class ChequeConfigRepository {
                     amount_words_x, amount_words_y,
                     amount_digits_x, amount_digits_y,
                     signature_x, signature_y,
-                    signature_path
-                ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    signature_path, date_positions,
+                    active_signature_id
+                ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -100,6 +104,8 @@ public class ChequeConfigRepository {
             pstmt.setDouble(12, config.getSignatureX());
             pstmt.setDouble(13, config.getSignatureY());
             pstmt.setString(14, config.getSignaturePath());
+            pstmt.setString(15, config.getDatePositions());
+            pstmt.setInt(16, config.getActiveSignatureId());
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -113,6 +119,7 @@ public class ChequeConfigRepository {
                 .bankName(rs.getString("bank_name"))
                 .isAcPayee(rs.getBoolean("is_ac_payee"))
                 .fontSize(rs.getInt("font_size"))
+                .activeSignatureId(rs.getInt("active_signature_id"))
                 .dateX(rs.getDouble("date_x"))
                 .dateY(rs.getDouble("date_y"))
                 .payeeX(rs.getDouble("payee_x"))
@@ -124,6 +131,7 @@ public class ChequeConfigRepository {
                 .signatureX(rs.getDouble("signature_x"))
                 .signatureY(rs.getDouble("signature_y"))
                 .signaturePath(rs.getString("signature_path"))
+                .datePositions(rs.getString("date_positions"))
                 .build();
     }
 }
