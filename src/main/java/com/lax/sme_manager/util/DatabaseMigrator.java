@@ -13,7 +13,7 @@ import java.sql.Statement;
  */
 public class DatabaseMigrator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseMigrator.class);
-    private static final int CURRENT_VERSION = 4; // Version 4: Signature Compatibility Fix
+    private static final int CURRENT_VERSION = 5; // Version 5: Multi-Bank & Integrity
 
     public void migrate() {
         try (Connection conn = DatabaseManager.getConnection()) {
@@ -64,6 +64,10 @@ public class DatabaseMigrator {
                 LOGGER.info("Executing Phase 4 Migration (Signature Fix)...");
                 migrateToV4(stmt);
             }
+            if (fromVersion < 5) {
+                LOGGER.info("Executing Phase 5 Migration (Multi-Bank Template)...");
+                migrateToV5(stmt);
+            }
         }
     }
 
@@ -87,6 +91,28 @@ public class DatabaseMigrator {
         } catch (SQLException e) {
             LOGGER.warn("signature_x/y columns already exist.");
         }
+    }
+
+    private void migrateToV5(Statement stmt) throws SQLException {
+        stmt.execute("""
+                CREATE TABLE IF NOT EXISTS bank_templates (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    bank_name TEXT UNIQUE NOT NULL,
+                    date_x DOUBLE, date_y DOUBLE,
+                    payee_x DOUBLE, payee_y DOUBLE,
+                    amount_words_x DOUBLE, amount_words_y DOUBLE,
+                    amount_digits_x DOUBLE, amount_digits_y DOUBLE,
+                    signature_x DOUBLE, signature_y DOUBLE
+                )
+                """);
+        
+        // Seed State Bank of India template
+        stmt.execute("""
+                INSERT OR IGNORE INTO bank_templates 
+                (bank_name, date_x, date_y, payee_x, payee_y, amount_words_x, amount_words_y, amount_digits_x, amount_digits_y, signature_x, signature_y)
+                VALUES 
+                ('State Bank of India', 154.0, 10.0, 25.0, 24.0, 25.0, 36.0, 155.0, 48.0, 150.0, 75.0)
+                """);
     }
 
     private void createBaseSchema(Statement stmt) throws SQLException {

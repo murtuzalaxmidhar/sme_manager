@@ -126,7 +126,7 @@ public class ChequeWriterView extends VBox {
             LocalDate date = datePicker.getValue();
             boolean isAcPayee = acPayeeCheck.isSelected();
 
-            ChequeData data = new ChequeData(payee, amount, date, isAcPayee);
+            ChequeData data = new ChequeData(payee, amount, date, isAcPayee, null);
             new ChequePreviewDialog(data).show();
 
         } catch (NumberFormatException e) {

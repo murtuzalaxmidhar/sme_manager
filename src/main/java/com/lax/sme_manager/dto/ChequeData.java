@@ -11,5 +11,6 @@ public record ChequeData(
         String payeeName,
         BigDecimal amount,
         LocalDate date,
-        boolean isAcPayee) {
+        boolean isAcPayee,
+        Integer purchaseId) {
 }
