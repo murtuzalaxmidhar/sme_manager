@@ -222,7 +222,7 @@ public class ChequePreviewDialog extends Dialog<Void> {
 
         relayoutAmountWords();
 
-        String digits = String.format("**%.2f/-", chequeData.amount());
+        String digits = String.format("%.2f/-", chequeData.amount());
         lblAmountDigits = createField(digits, config.getAmountDigitsX() > 0 ? config.getAmountDigitsX() : 155,
                 config.getAmountDigitsY() > 0 ? config.getAmountDigitsY() : 54, "Amount Digits");
 
