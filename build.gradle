@@ -52,7 +52,7 @@ dependencies {
 
 javafx {
     version = javafxVersion
-    modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.graphics' ]
+    modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.graphics', 'javafx.swing' ]
 }
 
 run {

@@ -374,7 +374,7 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
                 }
             }
         });
-        actionCol.setMinWidth(160);
+        actionCol.setMinWidth(180);
 
         table.getColumns().addAll(selectCol, dateCol, vendorCol, bagsCol, rateCol, amountCol, chequeCol, statusCol,
                 actionCol);
@@ -385,13 +385,21 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
         SVGPath path = new SVGPath();
         path.setContent(svgPath);
         path.setFill(Color.web(colorHex));
-        path.setScaleX(1.0);
-        path.setScaleY(1.0);
+        path.setScaleX(1.1); // Slightly larger
+        path.setScaleY(1.1);
 
         Button btn = new Button();
         btn.setGraphic(path);
         btn.setTooltip(new Tooltip(tooltip));
-        btn.setStyle("-fx-background-color: transparent; -fx-cursor: hand; -fx-padding: 4;");
+        btn.getStyleClass().add("button");
+        btn.getStyleClass().add("icon-only"); // New class from theme.css
+        // Override default button padding for icons
+        btn.setStyle("-fx-padding: 6; -fx-background-color: transparent; -fx-cursor: hand;");
+        
+        // Add hover effect manually to ensure visibility
+        btn.setOnMouseEntered(e -> btn.setStyle("-fx-padding: 6; -fx-background-color: rgba(0,0,0,0.05); -fx-background-radius: 50%; -fx-cursor: hand;"));
+        btn.setOnMouseExited(e -> btn.setStyle("-fx-padding: 6; -fx-background-color: transparent; -fx-cursor: hand;"));
+        
         return btn;
     }
 

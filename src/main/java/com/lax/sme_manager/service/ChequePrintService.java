@@ -35,9 +35,22 @@ public class ChequePrintService {
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
                 contentStream.setFont(PDType1Font.HELVETICA_BOLD, config.getFontSize());
 
-                // 1. Date (dd-MM-yyyy)
+                // 1. Date (dd-MM-yyyy) - Expert Alignment
                 String dateStr = data.date() != null ? data.date().format(DateTimeFormatter.ofPattern("ddMMyyyy")) : "";
-                drawText(contentStream, dateStr, config.getDateX(), config.getDateY());
+                String[] posArray = config.getDatePositions() != null ? config.getDatePositions().split(";") : null;
+                
+                for (int i = 0; i < dateStr.length(); i++) {
+                    float x, y;
+                    if (posArray != null && i < posArray.length) {
+                        String[] xy = posArray[i].split(",");
+                        x = Float.parseFloat(xy[0]);
+                        y = Float.parseFloat(xy[1]);
+                    } else {
+                        x = (float) (config.getDateX() + (i * 5.5));
+                        y = (float) config.getDateY();
+                    }
+                    drawText(contentStream, String.valueOf(dateStr.charAt(i)), x, y);
+                }
 
                 // 2. Payee
                 if (data.payeeName() != null) {
@@ -54,19 +67,33 @@ public class ChequePrintService {
 
                 // 5. AC Payee
                 if (data.isAcPayee()) {
-                    drawText(contentStream, "A/C PAYEE ONLY", 10, 10);
+                    drawText(contentStream, "A/C PAYEE ONLY", 15, 12);
                 }
 
-                // 6. Signature
-                if (config.getSignaturePath() != null && !config.getSignaturePath().isEmpty()) {
-                    try {
-                        PDImageXObject pdImage = PDImageXObject.createFromFile(config.getSignaturePath(), document);
-                        // Default height 15mm, preserve aspect ratio
-                        float sigHeight = 15 * MM_TO_POINTS;
-                        float sigWidth = (pdImage.getWidth() / (float) pdImage.getHeight()) * sigHeight;
+                // 6. Signature - Expert "Pen-Authentic" Integration
+                var sigRepo = new com.lax.sme_manager.repository.SignatureRepository();
+                var sigCfg = config.getActiveSignatureId() > 0 ? sigRepo.getSignatureById(config.getActiveSignatureId()) : null;
+                String sigPath = (sigCfg != null) ? sigCfg.getPath() : config.getSignaturePath();
 
-                        drawImage(contentStream, pdImage, config.getSignatureX(), config.getSignatureY(), sigWidth,
-                                sigHeight);
+                if (sigPath != null && !sigPath.isEmpty()) {
+                    try {
+                        PDImageXObject pdImage = PDImageXObject.createFromFile(sigPath, document);
+                        
+                        float scale = (sigCfg != null) ? (float) sigCfg.getScale() : 1.0f;
+                        float baseWidthMm = 40f; 
+                        float sigWidth = baseWidthMm * scale * MM_TO_POINTS;
+                        float sigHeight = (pdImage.getHeight() / (float) pdImage.getWidth()) * sigWidth;
+
+                        // Apply Pen-Authentic Effects
+                        org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState gs = new org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState();
+                        gs.setBlendMode(org.apache.pdfbox.pdmodel.graphics.blend.BlendMode.MULTIPLY);
+                        if (sigCfg != null) gs.setNonStrokingAlphaConstant((float) sigCfg.getOpacity());
+                        contentStream.setGraphicsStateParameters(gs);
+
+                        drawImage(contentStream, pdImage, config.getSignatureX(), config.getSignatureY(), sigWidth, sigHeight);
+                        
+                        // Reset graphics state for anything after
+                        contentStream.setGraphicsStateParameters(new org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
