@@ -14,6 +14,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -234,7 +235,7 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
         amountCol.getChildren().add(amountBox);
         grid.add(amountCol, 2, 0);
 
-        // Column 4: Buttons
+        // Column 4: Buttons (Expert Alignment)
         HBox btnBox = new HBox(12);
         btnBox.setAlignment(Pos.BOTTOM_RIGHT);
         Button apply = new Button("Apply");
@@ -249,10 +250,14 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
             maxAmount.clear();
             viewModel.resetFilters();
         });
-        btnBox.getChildren().addAll(apply, reset);
-        grid.add(btnBox, 3, 0);
+        btnBox.getChildren().addAll(reset, apply);
 
-        panel.getChildren().add(grid);
+        BorderPane filterLayout = new BorderPane();
+        filterLayout.setLeft(grid);
+        filterLayout.setRight(btnBox);
+        BorderPane.setMargin(btnBox, new Insets(0, 0, 4, 0));
+
+        panel.getChildren().add(filterLayout);
         return panel;
     }
 
@@ -335,45 +340,16 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
 
         // Actions with Crisp SVG Icons
         TableColumn<PurchaseEntity, Void> actionCol = new TableColumn<>("Actions");
-        actionCol.setCellFactory(cf -> new TableCell<>() {
-            private final Button viewBtn = createSvgButton(
-                    "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z",
-                    "#0ea5e9", "View");
-            private final Button editBtn = createSvgButton(
-                    "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
-                    "#f59e0b", "Edit");
-            private final Button printBtn = createSvgButton(
-                    "M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z",
-                    "#64748b", "Print Cheque");
-            private final Button delBtn = createSvgButton(
-                    "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z", "#ef4444",
-                    "Delete");
-
-            {
-                viewBtn.setOnAction(e -> {
-                    if (onPurchaseSelected != null)
-                        onPurchaseSelected.accept(getTableView().getItems().get(getIndex()));
-                });
-                editBtn.setOnAction(e -> {
-                    if (onPurchaseEdit != null)
-                        onPurchaseEdit.accept(getTableView().getItems().get(getIndex()));
-                });
-                printBtn.setOnAction(e -> handlePrintCheque(getTableView().getItems().get(getIndex())));
-                delBtn.setOnAction(e -> handleDelete(getTableView().getItems().get(getIndex())));
-            }
-
-            @Override
-            protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty)
-                    setGraphic(null);
-                else {
-                    HBox box = new HBox(8, viewBtn, editBtn, printBtn, delBtn);
-                    box.setAlignment(Pos.CENTER);
-                    setGraphic(box);
-                }
-            }
-        });
+        actionCol.setCellFactory(cf -> new ActionButtonsTableCell(
+                p -> {
+                    if (onPurchaseSelected != null) onPurchaseSelected.accept(p);
+                },
+                p -> {
+                    if (onPurchaseEdit != null) onPurchaseEdit.accept(p);
+                },
+                this::handlePrintCheque,
+                this::handleDelete
+        ));
         actionCol.setMinWidth(180);
 
         table.getColumns().addAll(selectCol, dateCol, vendorCol, bagsCol, rateCol, amountCol, chequeCol, statusCol,
@@ -406,35 +382,123 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
     private void handlePrintCheque(PurchaseEntity p) {
         String vendorName = getVendorName(p.getVendorId());
         com.lax.sme_manager.dto.ChequeData data = new com.lax.sme_manager.dto.ChequeData(
-                vendorName, p.getGrandTotal(), p.getChequeDate() != null ? p.getChequeDate() : LocalDate.now(), true);
-        new ChequePreviewDialog(data).show();
+                vendorName, p.getGrandTotal(), p.getChequeDate() != null ? p.getChequeDate() : LocalDate.now(), true, p.getId());
+        // Pass refresh callback so table updates immediately after successful print
+        new ChequePreviewDialog(data, () -> viewModel.loadPurchases()).show();
     }
 
     private void handleBatchPrint() {
         List<PurchaseEntity> selected = viewModel.selectedPurchases;
         if (selected.isEmpty())
             return;
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Print " + selected.size() + " cheques?", ButtonType.YES,
-                ButtonType.NO);
+
+        // Filter out already-PAID cheques
+        List<PurchaseEntity> unpaid = selected.stream()
+                .filter(p -> !"PAID".equalsIgnoreCase(p.getStatus()))
+                .toList();
+
+        if (unpaid.isEmpty()) {
+            new Alert(Alert.AlertType.WARNING, "All selected cheques are already PAID. Nothing to print.").show();
+            return;
+        }
+
+        int skipped = selected.size() - unpaid.size();
+        String msg = "Print " + unpaid.size() + " cheque(s)?";
+        if (skipped > 0) {
+            msg += "\n(" + skipped + " already-PAID cheque(s) will be skipped.)";
+        }
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, msg, ButtonType.YES, ButtonType.NO);
         alert.showAndWait().ifPresent(r -> {
             if (r == ButtonType.YES) {
-                var printService = new com.lax.sme_manager.service.ChequePrintService();
-                var config = new com.lax.sme_manager.repository.ChequeConfigRepository().getConfig();
-                int count = 0;
-                for (PurchaseEntity p : selected) {
-                    try {
-                        String vName = getVendorName(p.getVendorId());
-                        var data = new com.lax.sme_manager.dto.ChequeData(vName, p.getGrandTotal(),
-                                p.getChequeDate() != null ? p.getChequeDate() : LocalDate.now(), true);
-                        printService.printSilent(config, data);
-                        count++;
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                // Ask for a starting cheque number for the batch
+                TextInputDialog chqDialog = new TextInputDialog();
+                chqDialog.setTitle("Batch Cheque Numbers");
+                chqDialog.setHeaderText("Enter Starting Cheque Number");
+                chqDialog.setContentText("First leaf number (6+ digits):");
+                chqDialog.showAndWait().ifPresent(startChqStr -> {
+                    if (startChqStr.trim().length() < 6) {
+                        new Alert(Alert.AlertType.ERROR, "Cheque number must be at least 6 digits.").show();
+                        return;
                     }
-                }
-                new Alert(Alert.AlertType.INFORMATION, "Sent " + count + " cheques to printer.").show();
+
+                    var printService = new com.lax.sme_manager.service.ChequePrintService();
+                    var config = new com.lax.sme_manager.repository.ChequeConfigRepository().getConfig();
+                    int count = 0;
+                    int duplicates = 0;
+
+                    try {
+                        long chqNum = Long.parseLong(startChqStr.trim());
+
+                        for (PurchaseEntity p : unpaid) {
+                            String currentChqNo = String.valueOf(chqNum);
+
+                            // Fraud check for each cheque number
+                            if (isBatchChequeNumberDuplicate(currentChqNo)) {
+                                duplicates++;
+                                chqNum++;
+                                continue;
+                            }
+
+                            try {
+                                String vName = getVendorName(p.getVendorId());
+                                var data = new com.lax.sme_manager.dto.ChequeData(vName, p.getGrandTotal(),
+                                        p.getChequeDate() != null ? p.getChequeDate() : LocalDate.now(), true, p.getId());
+                                printService.printSilent(config, data);
+
+                                // Mark as PAID in DB
+                                markBatchPurchaseAsPaid(p.getId(), currentChqNo);
+                                count++;
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            chqNum++;
+                        }
+                    } catch (NumberFormatException e) {
+                        new Alert(Alert.AlertType.ERROR, "Invalid cheque number format. Use digits only.").show();
+                        return;
+                    }
+
+                    String result = "Sent " + count + " cheque(s) to printer and marked as PAID.";
+                    if (duplicates > 0) {
+                        result += "\n⚠️ " + duplicates + " duplicate cheque number(s) were skipped.";
+                    }
+                    new Alert(Alert.AlertType.INFORMATION, result).show();
+
+                    // Refresh the table immediately
+                    viewModel.loadPurchases();
+                    viewModel.selectedPurchases.clear();
+                });
             }
         });
+    }
+
+    /** Fraud check for batch printing */
+    private boolean isBatchChequeNumberDuplicate(String chqNo) {
+        String sql = "SELECT COUNT(*) FROM purchase_entries WHERE cheque_number = ?";
+        try (var conn = com.lax.sme_manager.util.DatabaseManager.getConnection();
+             var stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, chqNo);
+            var rs = stmt.executeQuery();
+            if (rs.next()) return rs.getInt(1) > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /** Mark a single purchase as PAID during batch printing */
+    private void markBatchPurchaseAsPaid(int purchaseId, String chqNo) {
+        String sql = "UPDATE purchase_entries SET status = 'PAID', cheque_number = ?, cheque_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (var conn = com.lax.sme_manager.util.DatabaseManager.getConnection();
+             var stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, chqNo);
+            stmt.setObject(2, LocalDate.now());
+            stmt.setInt(3, purchaseId);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleBulkDelete() {

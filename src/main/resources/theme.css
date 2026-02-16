@@ -123,7 +123,8 @@
 }
 
 .table-view .table-cell {
-    -fx-padding: 10 15;
+    -fx-padding: 12 15;
+    -fx-border-color: transparent -fx-table-cell-border-color transparent transparent;
 }
 
 .table-row-cell {
@@ -131,11 +132,16 @@
 }
 
 .table-row-cell:odd {
-    -fx-background-color: #FAFAFA;
+    -fx-background-color: #F8FAFC;
+}
+
+.table-row-cell:hover {
+    -fx-background-color: #F1F5F9;
 }
 
 .table-row-cell:selected {
-    -fx-background-color: #F0FDFA;
+    -fx-background-color: #EEF2FF;
+    -fx-background-insets: 0;
 }
 
 /* ============================================
