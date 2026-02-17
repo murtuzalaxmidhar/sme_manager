@@ -399,7 +399,7 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
                     setStyle("");
                 } else {
                     setText(item);
-                    if ("PAID".equalsIgnoreCase(item))
+                    if (item.startsWith("PAID"))
                         setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold;");
                     else if ("UNPAID".equalsIgnoreCase(item))
                         setStyle("-fx-text-fill: #ef4444; -fx-font-weight: bold;");

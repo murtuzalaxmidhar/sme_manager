@@ -1,6 +1,9 @@
 package com.lax.sme_manager.ui.view;
 
+import com.lax.sme_manager.service.MetricsService;
 import com.lax.sme_manager.service.UpdateService;
+import com.lax.sme_manager.ui.component.UIStyles;
+import com.lax.sme_manager.ui.theme.LaxTheme;
 import com.lax.sme_manager.ui.view.UpdateDialog;
 import com.lax.sme_manager.util.i18n.AppLabel;
 import com.lax.sme_manager.viewmodel.DashboardViewModel;
