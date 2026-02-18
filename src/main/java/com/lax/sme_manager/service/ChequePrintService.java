@@ -36,15 +36,17 @@ public class ChequePrintService {
                 // Swap dimensions for rotation
                 pageSize = new PDRectangle(CHEQUE_HEIGHT_POINTS, CHEQUE_WIDTH_POINTS);
             }
-            
+
             PDPage page = new PDPage(pageSize);
             document.addPage(page);
 
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
                 if (FIX_ROTATION) {
-                    // Rotate the content 90 degrees and shift origin so (0,0) is correct for the new orientation
+                    // Rotate the content 90 degrees and shift origin so (0,0) is correct for the
+                    // new orientation
                     // Matrix.getRotateInstance(Angle, X, Y)
-                    contentStream.transform(org.apache.pdfbox.util.Matrix.getRotateInstance(Math.toRadians(90), CHEQUE_HEIGHT_POINTS, 0));
+                    contentStream.transform(org.apache.pdfbox.util.Matrix.getRotateInstance(Math.toRadians(90),
+                            CHEQUE_HEIGHT_POINTS, 0));
                 }
 
                 contentStream.setFont(PDType1Font.HELVETICA_BOLD, config.getFontSize());
@@ -52,7 +54,7 @@ public class ChequePrintService {
                 // 1. Date (dd-MM-yyyy) - Expert Alignment
                 String dateStr = data.date() != null ? data.date().format(DateTimeFormatter.ofPattern("ddMMyyyy")) : "";
                 String[] posArray = config.getDatePositions() != null ? config.getDatePositions().split(";") : null;
-                
+
                 for (int i = 0; i < dateStr.length(); i++) {
                     float x, y;
                     if (posArray != null && i < posArray.length) {
@@ -76,7 +78,7 @@ public class ChequePrintService {
                 drawText(contentStream, amountWords, config.getAmountWordsX(), config.getAmountWordsY());
 
                 // 4. Amount (Digits)
-                String amountDigits = String.format("**%.2f/-", data.amount());
+                String amountDigits = String.format("%.2f/-", data.amount());
                 drawText(contentStream, amountDigits, config.getAmountDigitsX(), config.getAmountDigitsY());
 
                 // 5. AC Payee - Expert Diagonal Ribbon
@@ -86,28 +88,32 @@ public class ChequePrintService {
 
                 // 6. Signature - Expert "Pen-Authentic" Integration
                 var sigRepo = new com.lax.sme_manager.repository.SignatureRepository();
-                var sigCfg = config.getActiveSignatureId() > 0 ? sigRepo.getSignatureById(config.getActiveSignatureId()) : null;
+                var sigCfg = config.getActiveSignatureId() > 0 ? sigRepo.getSignatureById(config.getActiveSignatureId())
+                        : null;
                 String sigPath = (sigCfg != null) ? sigCfg.getPath() : config.getSignaturePath();
 
                 if (sigPath != null && !sigPath.isEmpty()) {
                     try {
                         PDImageXObject pdImage = PDImageXObject.createFromFile(sigPath, document);
-                        
+
                         float scale = (sigCfg != null) ? (float) sigCfg.getScale() : 1.0f;
-                        float baseWidthMm = 40f; 
+                        float baseWidthMm = 40f;
                         float sigWidth = baseWidthMm * scale * MM_TO_POINTS;
                         float sigHeight = (pdImage.getHeight() / (float) pdImage.getWidth()) * sigWidth;
 
                         // Apply Pen-Authentic Effects
                         org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState gs = new org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState();
                         gs.setBlendMode(org.apache.pdfbox.pdmodel.graphics.blend.BlendMode.MULTIPLY);
-                        if (sigCfg != null) gs.setNonStrokingAlphaConstant((float) sigCfg.getOpacity());
+                        if (sigCfg != null)
+                            gs.setNonStrokingAlphaConstant((float) sigCfg.getOpacity());
                         contentStream.setGraphicsStateParameters(gs);
 
-                        drawImage(contentStream, pdImage, config.getSignatureX(), config.getSignatureY(), sigWidth, sigHeight);
-                        
+                        drawImage(contentStream, pdImage, config.getSignatureX(), config.getSignatureY(), sigWidth,
+                                sigHeight);
+
                         // Reset graphics state for anything after
-                        contentStream.setGraphicsStateParameters(new org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState());
+                        contentStream.setGraphicsStateParameters(
+                                new org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -116,11 +122,11 @@ public class ChequePrintService {
 
             // Send to Printer
             PrinterJob job = PrinterJob.getPrinterJob();
-            
+
             // Expert fix: Force Landscape PageFormat for the PrinterJob
             java.awt.print.PageFormat pf = job.defaultPage();
             pf.setOrientation(java.awt.print.PageFormat.LANDSCAPE);
-            
+
             job.setPageable(new PDFPageable(document));
             PrintService defaultService = PrintServiceLookup.lookupDefaultPrintService();
             if (defaultService != null) {
@@ -138,34 +144,34 @@ public class ChequePrintService {
     private void drawAcPayee(PDPageContentStream stream, double xMm, double yMm) throws IOException {
         float x = (float) (xMm * MM_TO_POINTS);
         float y = CHEQUE_HEIGHT_POINTS - (float) (yMm * MM_TO_POINTS);
-        
+
         stream.saveGraphicsState();
-        
+
         // 1. Position and Rotate
         stream.transform(org.apache.pdfbox.util.Matrix.getTranslateInstance(x, y));
         stream.transform(org.apache.pdfbox.util.Matrix.getRotateInstance(Math.toRadians(15), 0, 0));
-        
+
         // 2. Draw Parallel Lines
         stream.setLineWidth(1.2f);
         stream.setStrokingColor(0, 0, 0);
-        
+
         // Top line (Extended for 'Y' clearance)
         stream.moveTo(-12, 12);
         stream.lineTo(120, 12);
         stream.stroke();
-        
+
         // Bottom line (Extended for 'Y' clearance)
         stream.moveTo(-12, -4);
         stream.lineTo(120, -4);
         stream.stroke();
-        
+
         // 3. Draw Text
         stream.beginText();
         stream.setFont(PDType1Font.HELVETICA_BOLD, 11);
         stream.newLineAtOffset(0, 0);
         stream.showText("A/C PAYEE");
         stream.endText();
-        
+
         stream.restoreGraphicsState();
     }
 
