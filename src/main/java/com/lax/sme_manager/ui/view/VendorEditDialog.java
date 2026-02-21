@@ -1,16 +1,18 @@
 package com.lax.sme_manager.ui.view;
 
 import com.lax.sme_manager.repository.model.VendorEntity;
+import com.lax.sme_manager.ui.component.AlertUtils;
 import com.lax.sme_manager.ui.theme.LaxTheme;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.*;
 
 import java.time.LocalDateTime;
 
 /**
- * Modal dialog for adding/editing vendors
+ * Modern, premium modal dialog for adding/editing vendors.
+ * Features frosted glass header, spacious form, and styled buttons.
  */
 public class VendorEditDialog extends Dialog<VendorEntity> {
 
@@ -28,101 +30,80 @@ public class VendorEditDialog extends Dialog<VendorEntity> {
         this.existingVendor = vendor;
 
         setTitle(vendor == null ? "Add New Vendor" : "Edit Vendor");
-        setHeaderText(vendor == null ? "Register a new vendor to your network" : "Update information for " + vendor.getName());
+        setHeaderText(vendor == null ? "Register a new vendor to your network"
+                : "Update information for " + vendor.getName());
 
         getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        getDialogPane().getStyleClass().add("dialog-pane");
 
-        GridPane grid = new GridPane();
-        grid.setHgap(20);
-        grid.setVgap(20);
-        grid.setPadding(new Insets(30));
-        grid.setPrefWidth(650);
+        // Apply modern CSS styling
+        AlertUtils.styleDialog(this);
 
-        // Styling helpers
-        String labelStyle = "-fx-font-weight: bold; -fx-text-fill: #64748B; -fx-font-size: 13px;";
-        String fieldStyle = "-fx-pref-height: 40px;";
+        // --- Premium Form Layout ---
+        VBox formContainer = new VBox(20);
+        formContainer.setPadding(new Insets(24, 32, 24, 32));
+        formContainer.setPrefWidth(600);
+        formContainer.setStyle("-fx-background-color: #ffffff;");
 
-        // Name (required)
-        Label nameLbl = new Label("VENDOR NAME *");
-        nameLbl.setStyle(labelStyle);
-        nameField = new TextField();
-        nameField.setPromptText("Enter full legal name of the vendor");
-        nameField.setStyle(fieldStyle);
-        GridPane.setHgrow(nameField, Priority.ALWAYS);
+        // Section: Basic Info
+        Label basicHeader = createSectionHeader("Basic Information");
+        GridPane basicGrid = createFormGrid();
 
-        // Contact Person
-        Label contactPersonLbl = new Label("CONTACT PERSON");
-        contactPersonLbl.setStyle(labelStyle);
-        contactPersonField = new TextField();
-        contactPersonField.setPromptText("Primary contact person name");
-        contactPersonField.setStyle(fieldStyle);
-        GridPane.setHgrow(contactPersonField, Priority.ALWAYS);
+        nameField = createStyledField("Enter full legal name");
+        contactPersonField = createStyledField("Primary contact person name");
 
-        // Phone
-        Label phoneLbl = new Label("PHONE NUMBER");
-        phoneLbl.setStyle(labelStyle);
-        phoneField = new TextField();
-        phoneField.setPromptText("e.g. +1 234 567 890");
-        phoneField.setStyle(fieldStyle);
-        GridPane.setHgrow(phoneField, Priority.ALWAYS);
+        addFormRow(basicGrid, 0, "VENDOR NAME *", nameField);
+        addFormRow(basicGrid, 1, "CONTACT PERSON", contactPersonField);
 
-        // Email
-        Label emailLbl = new Label("EMAIL ADDRESS");
-        emailLbl.setStyle(labelStyle);
-        emailField = new TextField();
-        emailField.setPromptText("e.g. vendor@example.com");
-        emailField.setStyle(fieldStyle);
-        GridPane.setHgrow(emailField, Priority.ALWAYS);
+        // Section: Contact Details
+        Label contactHeader = createSectionHeader("Contact Details");
+        GridPane contactGrid = createFormGrid();
 
-        // Address
-        Label addressLbl = new Label("OFFICE ADDRESS");
-        addressLbl.setStyle(labelStyle);
+        phoneField = createStyledField("+91 00000 00000");
+        emailField = createStyledField("vendor@example.com");
+
+        addFormRow(contactGrid, 0, "PHONE NUMBER", phoneField);
+        addFormRow(contactGrid, 1, "EMAIL ADDRESS", emailField);
+
+        // Section: Address & Amount
+        Label addressHeader = createSectionHeader("Address & Defaults");
+        GridPane addressGrid = createFormGrid();
+
         addressArea = new TextArea();
         addressArea.setPromptText("Enter full physical or mailing address");
-        addressArea.setPrefRowCount(3);
-        GridPane.setHgrow(addressArea, Priority.ALWAYS);
+        addressArea.setPrefRowCount(2);
+        addressArea.setStyle(getTextAreaStyle());
 
-        // Default Amount
-        Label defaultAmountLbl = new Label("DEFAULT AMOUNT (₹)");
-        defaultAmountLbl.setStyle(labelStyle);
-        defaultAmountField = new TextField();
-        defaultAmountField.setPromptText("Auto-populate in Cheque Writer");
-        defaultAmountField.setStyle(fieldStyle);
-        GridPane.setHgrow(defaultAmountField, Priority.ALWAYS);
+        defaultAmountField = createStyledField("Auto-populate amount in Cheque Writer");
 
-        // Notes
-        Label notesLbl = new Label("INTERNAL NOTES");
-        notesLbl.setStyle(labelStyle);
+        addFormRow(addressGrid, 0, "OFFICE ADDRESS", addressArea);
+        addFormRow(addressGrid, 1, "DEFAULT AMOUNT (\u20B9)", defaultAmountField);
+
+        // Section: Notes
+        Label notesHeader = createSectionHeader("Internal Notes");
+        GridPane notesGrid = createFormGrid();
+
         notesArea = new TextArea();
-        notesArea.setPromptText("Any additional terms, bank details, or internal remarks");
-        notesArea.setPrefRowCount(3);
-        GridPane.setHgrow(notesArea, Priority.ALWAYS);
+        notesArea.setPromptText("Bank details, terms, or internal remarks");
+        notesArea.setPrefRowCount(2);
+        notesArea.setStyle(getTextAreaStyle());
 
-        // Add all to grid
-        int row = 0;
-        grid.add(nameLbl, 0, row);
-        grid.add(nameField, 1, row++);
+        addFormRow(notesGrid, 0, "NOTES", notesArea);
 
-        grid.add(contactPersonLbl, 0, row);
-        grid.add(contactPersonField, 1, row++);
+        formContainer.getChildren().addAll(
+                basicHeader, basicGrid,
+                createSeparator(),
+                contactHeader, contactGrid,
+                createSeparator(),
+                addressHeader, addressGrid,
+                createSeparator(),
+                notesHeader, notesGrid);
 
-        grid.add(phoneLbl, 0, row);
-        grid.add(phoneField, 1, row++);
+        ScrollPane scrollPane = new ScrollPane(formContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPrefHeight(500);
+        scrollPane.setStyle("-fx-background-color: transparent;");
 
-        grid.add(emailLbl, 0, row);
-        grid.add(emailField, 1, row++);
-
-        grid.add(addressLbl, 0, row);
-        grid.add(addressArea, 1, row++);
-
-        grid.add(defaultAmountLbl, 0, row);
-        grid.add(defaultAmountField, 1, row++);
-
-        grid.add(notesLbl, 0, row);
-        grid.add(notesArea, 1, row);
-
-        getDialogPane().setContent(grid);
+        getDialogPane().setContent(scrollPane);
 
         // Populate fields if editing
         if (vendor != null) {
@@ -131,13 +112,15 @@ public class VendorEditDialog extends Dialog<VendorEntity> {
             phoneField.setText(vendor.getPhone());
             emailField.setText(vendor.getEmail());
             addressArea.setText(vendor.getAddress());
-            defaultAmountField.setText(vendor.getDefaultAmount() != null ? vendor.getDefaultAmount().toPlainString() : "");
+            defaultAmountField
+                    .setText(vendor.getDefaultAmount() != null ? vendor.getDefaultAmount().toPlainString() : "");
             notesArea.setText(vendor.getNotes());
         }
 
-        // Validation: name is required
+        // Validation: name required
         Button okButton = (Button) getDialogPane().lookupButton(ButtonType.OK);
-        okButton.setDisable(vendor == null); // Disable for new vendor until name entered
+        okButton.setText(vendor == null ? "Add Vendor" : "Save Changes");
+        okButton.setDisable(vendor == null);
 
         nameField.textProperty().addListener((obs, old, val) -> {
             okButton.setDisable(val == null || val.trim().isEmpty());
@@ -148,10 +131,8 @@ public class VendorEditDialog extends Dialog<VendorEntity> {
             if (dialogButton == ButtonType.OK) {
                 VendorEntity result;
                 if (existingVendor != null) {
-                    // Update existing
                     result = existingVendor;
                 } else {
-                    // Create new
                     result = new VendorEntity();
                     result.setCreatedAt(LocalDateTime.now());
                 }
@@ -174,5 +155,68 @@ public class VendorEditDialog extends Dialog<VendorEntity> {
             }
             return null;
         });
+    }
+
+    private Label createSectionHeader(String text) {
+        Label header = new Label(text);
+        header.setStyle(
+                "-fx-font-size: 14px; -fx-font-weight: 700; -fx-text-fill: #0f172a; " +
+                        "-fx-padding: 4 0 0 0;");
+        return header;
+    }
+
+    private GridPane createFormGrid() {
+        GridPane grid = new GridPane();
+        grid.setHgap(20);
+        grid.setVgap(14);
+        return grid;
+    }
+
+    private TextField createStyledField(String prompt) {
+        TextField field = new TextField();
+        field.setPromptText(prompt);
+        field.setStyle(
+                "-fx-pref-height: 40px; -fx-background-color: #f8fafc; " +
+                        "-fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8; " +
+                        "-fx-padding: 8 14; -fx-font-size: 13px;");
+        field.focusedProperty().addListener((obs, old, focused) -> {
+            if (focused) {
+                field.setStyle(
+                        "-fx-pref-height: 40px; -fx-background-color: #ffffff; " +
+                                "-fx-border-color: #0d9488; -fx-border-radius: 8; -fx-background-radius: 8; " +
+                                "-fx-border-width: 1.5; -fx-padding: 8 14; -fx-font-size: 13px; " +
+                                "-fx-effect: dropshadow(gaussian, rgba(13,148,136,0.15), 8, 0, 0, 0);");
+            } else {
+                field.setStyle(
+                        "-fx-pref-height: 40px; -fx-background-color: #f8fafc; " +
+                                "-fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8; " +
+                                "-fx-padding: 8 14; -fx-font-size: 13px;");
+            }
+        });
+        GridPane.setHgrow(field, Priority.ALWAYS);
+        return field;
+    }
+
+    private String getTextAreaStyle() {
+        return "-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; " +
+                "-fx-border-radius: 8; -fx-background-radius: 8; -fx-font-size: 13px; " +
+                "-fx-padding: 8 14;";
+    }
+
+    private void addFormRow(GridPane grid, int row, String labelText, javafx.scene.Node field) {
+        Label label = new Label(labelText);
+        label.setStyle(
+                "-fx-font-weight: 700; -fx-text-fill: #64748b; -fx-font-size: 11px; " +
+                        "-fx-letter-spacing: 0.5;");
+        label.setMinWidth(140);
+        grid.add(label, 0, row);
+        grid.add(field, 1, row);
+        GridPane.setHgrow(field, Priority.ALWAYS);
+    }
+
+    private Separator createSeparator() {
+        Separator sep = new Separator();
+        sep.setStyle("-fx-padding: 4 0;");
+        return sep;
     }
 }

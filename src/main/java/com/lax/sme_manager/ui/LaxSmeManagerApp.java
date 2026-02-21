@@ -32,6 +32,7 @@ import com.lax.sme_manager.ui.view.VendorManagementView;
 import com.lax.sme_manager.ui.view.RecycleBinView;
 import com.lax.sme_manager.viewmodel.RecycleBinViewModel;
 import javafx.scene.control.TextInputDialog;
+import com.lax.sme_manager.ui.component.AlertUtils;
 
 /**
  * LaxSmeManagerApp - Main application window
@@ -386,6 +387,8 @@ public class LaxSmeManagerApp {
                     chequeWriterView.refreshLayout();
                 }
             });
+        } else {
+            chequeSettingsView.refreshBooksTable();
         }
         contentArea.getChildren().clear();
         ScrollPane scrollPane = new ScrollPane(chequeSettingsView);
@@ -397,6 +400,7 @@ public class LaxSmeManagerApp {
     private void showRecycleBin() {
         // Password Protection as requested
         TextInputDialog passwordDialog = new TextInputDialog();
+        AlertUtils.styleDialog(passwordDialog);
         passwordDialog.setTitle("Secure Access");
         passwordDialog.setHeaderText("Recycle Bin is password protected.");
         passwordDialog.setContentText("Enter Management Password:");
@@ -414,7 +418,7 @@ public class LaxSmeManagerApp {
             contentArea.getChildren().add(recycleBinView);
         } else {
             if (result.isPresent()) {
-                new Alert(Alert.AlertType.ERROR, "Incorrect password. Access denied.").show();
+                AlertUtils.showError("Error", "Incorrect password. Access denied.");
             }
             // Switch back to Dashboard or previous screen to avoid staying on empty
             // selection

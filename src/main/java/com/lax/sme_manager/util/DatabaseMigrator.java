@@ -13,7 +13,7 @@ import java.sql.Statement;
  */
 public class DatabaseMigrator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseMigrator.class);
-    private static final int CURRENT_VERSION = 11; // Version 11: Date Offset Support
+    private static final int CURRENT_VERSION = 12; // Version 12: Cheque Book Management Support
 
     public void migrate() {
         try (Connection conn = DatabaseManager.getConnection()) {
@@ -91,6 +91,10 @@ public class DatabaseMigrator {
             if (fromVersion < 11) {
                 LOGGER.info("Executing Phase 11 Migration (Date Offsets)...");
                 migrateToV11(stmt);
+            }
+            if (fromVersion < 12) {
+                LOGGER.info("Executing Phase 12 Migration (Cheque Books)...");
+                migrateToV12(stmt);
             }
         }
     }
@@ -201,6 +205,21 @@ public class DatabaseMigrator {
         } catch (SQLException e) {
             LOGGER.warn("date_offset_x/y columns might already exist.");
         }
+    }
+
+    private void migrateToV12(Statement stmt) throws SQLException {
+        stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS cheque_books (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        book_name TEXT NOT NULL,
+                        bank_name TEXT NOT NULL,
+                        start_number INTEGER NOT NULL,
+                        end_number INTEGER NOT NULL,
+                        next_number INTEGER NOT NULL,
+                        is_active BOOLEAN DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """);
     }
 
     private void createBaseSchema(Statement stmt) throws SQLException {

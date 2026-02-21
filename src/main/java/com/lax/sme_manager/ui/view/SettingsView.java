@@ -3,6 +3,7 @@ package com.lax.sme_manager.ui.view;
 import com.lax.sme_manager.repository.SignatureRepository;
 import com.lax.sme_manager.repository.ChequeConfigRepository;
 import com.lax.sme_manager.repository.model.SignatureConfig;
+import com.lax.sme_manager.ui.component.AlertUtils;
 import com.lax.sme_manager.repository.model.ChequeConfig;
 import com.lax.sme_manager.ui.component.UIStyles;
 import com.lax.sme_manager.ui.theme.LaxTheme;
@@ -69,7 +70,7 @@ public class SettingsView extends VBox {
         btnBackup.setStyle(LaxTheme.getButtonStyle(LaxTheme.ButtonType.SECONDARY));
         btnBackup.setOnAction(e -> {
             new BackupService().performBackup();
-            new Alert(Alert.AlertType.INFORMATION, "Manual Backup Successful").show();
+            AlertUtils.showInfo("Information", "Manual Backup Successful");
         });
         generalGrid.add(btnBackup, 1, 2);
         generalSection.getChildren().add(generalGrid);
@@ -97,7 +98,7 @@ public class SettingsView extends VBox {
             chequeConfig.setBankName(bankName.getText());
             chequeConfig.setFontSize((int) fontSlider.getValue());
             configRepo.saveConfig(chequeConfig);
-            new Alert(Alert.AlertType.INFORMATION, "Cheque defaults saved.").show();
+            AlertUtils.showInfo("Settings Saved", "Cheque defaults saved.");
         });
         chequeGrid.add(btnSaveCheque, 1, 2);
         chequeSection.getChildren().add(chequeGrid);
@@ -115,7 +116,7 @@ public class SettingsView extends VBox {
         btnAdd.setStyle(LaxTheme.getButtonStyle(LaxTheme.ButtonType.PRIMARY));
         btnAdd.setOnAction(e -> handleAdd());
 
-        signatureList.setPrefWidth(250);
+        signatureList.setPrefWidth(380);
         left.getChildren().addAll(btnAdd, new Label("Saved Signatures:"), signatureList);
 
         VBox right = new VBox(15);
@@ -151,7 +152,7 @@ public class SettingsView extends VBox {
         btnSaveSig.setOnAction(e -> {
             if (activeConfig != null) {
                 sigRepo.saveSignature(activeConfig);
-                new Alert(Alert.AlertType.INFORMATION, "Signature tuning saved.").show();
+                AlertUtils.showInfo("Signature Saved", "Signature tuning saved.");
             }
         });
 
@@ -174,18 +175,20 @@ public class SettingsView extends VBox {
                     "-fx-padding: 8; -fx-border-color: #e2e8f0; -fx-background-color: white; -fx-background-radius: 4;");
 
             Label name = new Label(sig.getName());
-            name.setPrefWidth(120);
+            name.setPrefWidth(140);
+            name.setWrapText(true);
             name.setStyle("-fx-font-size: 12px;");
 
-            Button btnActive = new Button(chequeConfig.getActiveSignatureId() == sig.getId() ? "✅ Active" : "Set Active");
-            btnActive.setStyle(chequeConfig.getActiveSignatureId() == sig.getId() 
-                ? "-fx-background-color: #0d9488; -fx-text-fill: white;" 
-                : LaxTheme.getButtonStyle(LaxTheme.ButtonType.SECONDARY));
+            Button btnActive = new Button(
+                    chequeConfig.getActiveSignatureId() == sig.getId() ? "✅ Active" : "Set Active");
+            btnActive.setStyle(chequeConfig.getActiveSignatureId() == sig.getId()
+                    ? "-fx-background-color: #0d9488; -fx-text-fill: white;"
+                    : LaxTheme.getButtonStyle(LaxTheme.ButtonType.SECONDARY));
             btnActive.setOnAction(e -> {
                 chequeConfig.setActiveSignatureId(sig.getId());
                 configRepo.saveConfig(chequeConfig);
                 loadSignatures();
-                new Alert(Alert.AlertType.INFORMATION, "Signature set as active for printing.").show();
+                AlertUtils.showInfo("Signature Updated", "Signature set as active for printing.");
             });
 
             Button btnSelect = new Button("⚙️");
@@ -239,9 +242,9 @@ public class SettingsView extends VBox {
                 if (added != null)
                     selectSignature(added);
 
-                new Alert(Alert.AlertType.INFORMATION, "Signature uploaded and selected for tuning.").show();
+                AlertUtils.showInfo("Information", "Signature uploaded and selected for tuning.");
             } catch (Exception e) {
-                new Alert(Alert.AlertType.ERROR, "Failed to upload: " + e.getMessage()).show();
+                AlertUtils.showError("Error", "Failed to upload: " + e.getMessage());
             }
         }
     }

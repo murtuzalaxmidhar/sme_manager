@@ -1,0 +1,168 @@
+/* ===== Modern Alert Stylesheet ===== */
+/* Premium, glassmorphic dialog styling for SME Manager */
+
+.dialog-pane {
+    -fx-background-color: #ffffff;
+    -fx-font-family: 'Segoe UI', 'Inter', system;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 24, 0, 0, 8);
+}
+
+/* Header area */
+.dialog-pane>.header-panel {
+    -fx-background-color: linear-gradient(to right, #f8fafc, #f1f5f9);
+    -fx-padding: 18 24;
+}
+
+.dialog-pane>.header-panel .label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0f172a;
+}
+
+/* Content area */
+.dialog-pane>.content.label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #475569;
+    -fx-padding: 18 24;
+    -fx-line-spacing: 3;
+}
+
+.dialog-pane>.content {
+    -fx-padding: 16 24;
+}
+
+/* Button bar */
+.dialog-pane>.button-bar {
+    -fx-padding: 12 24 16 24;
+}
+
+.dialog-pane>.button-bar>.container {
+    -fx-spacing: 10;
+}
+
+/* Primary button */
+.dialog-pane .button {
+    -fx-background-color: #0d9488;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 9 22;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-font-size: 13px;
+    -fx-font-family: 'Segoe UI', 'Inter', system;
+    -fx-effect: dropshadow(gaussian, rgba(13, 148, 136, 0.25), 6, 0, 0, 2);
+}
+
+.dialog-pane .button:hover {
+    -fx-background-color: #0f766e;
+    -fx-effect: dropshadow(gaussian, rgba(13, 148, 136, 0.4), 10, 0, 0, 3);
+}
+
+/* Cancel / No button */
+.dialog-pane .button:cancel {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #475569;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-effect: none;
+}
+
+.dialog-pane .button:cancel:hover {
+    -fx-background-color: #e2e8f0;
+    -fx-text-fill: #334155;
+}
+
+/* Graphic area (icon) */
+.dialog-pane>.graphic-container {
+    -fx-padding: 20 0 20 24;
+}
+
+/* Context-specific icons */
+.dialog-pane:information .graphic {
+    -fx-text-fill: #0d9488;
+}
+
+.dialog-pane:error .graphic {
+    -fx-text-fill: #dc2626;
+}
+
+.dialog-pane:warning .graphic {
+    -fx-text-fill: #f59e0b;
+}
+
+.dialog-pane:confirmation .graphic {
+    -fx-text-fill: #3b82f6;
+}
+
+/* Text fields inside dialogs */
+.dialog-pane .text-field {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 10 14;
+    -fx-font-size: 13px;
+    -fx-font-family: 'Segoe UI', 'Inter', system;
+}
+
+.dialog-pane .text-field:focused {
+    -fx-border-color: #0d9488;
+    -fx-border-width: 1.5;
+    -fx-effect: dropshadow(gaussian, rgba(13, 148, 136, 0.15), 8, 0, 0, 0);
+}
+
+/* Text areas inside dialogs */
+.dialog-pane .text-area {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-font-size: 13px;
+    -fx-font-family: 'Segoe UI', 'Inter', system;
+}
+
+.dialog-pane .text-area:focused {
+    -fx-border-color: #0d9488;
+}
+
+.dialog-pane .text-area .content {
+    -fx-background-color: #f8fafc;
+}
+
+/* Labels inside dialog forms */
+.dialog-pane .label {
+    -fx-font-family: 'Segoe UI', 'Inter', system;
+    -fx-text-fill: #334155;
+}
+
+/* Checkboxes */
+.dialog-pane .check-box {
+    -fx-font-size: 13px;
+    -fx-text-fill: #334155;
+}
+
+.dialog-pane .check-box .box {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.dialog-pane .check-box:selected .box {
+    -fx-background-color: #0d9488;
+    -fx-border-color: #0d9488;
+}
+
+/* Choice/Combo boxes */
+.dialog-pane .choice-box,
+.dialog-pane .combo-box {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 6 12;
+    -fx-font-size: 13px;
+}

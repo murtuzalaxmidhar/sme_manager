@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import com.lax.sme_manager.ui.component.AlertUtils;
 
 /**
  * Vendor Management View - Full CRUD operations for vendors
@@ -51,16 +52,16 @@ public class VendorManagementView extends VBox implements RefreshableView {
         // --- HERO HEADER & TOP SEARCH ---
         HBox topHeader = new HBox(20);
         topHeader.setAlignment(Pos.CENTER_LEFT);
-        
+
         VBox titleBox = new VBox(2);
         Label titleLbl = new Label("Vendor Management");
         titleLbl.setStyle("-fx-font-size: 28px; -fx-font-weight: 800; -fx-text-fill: #0F172A;");
-        
+
         HBox statsBox = new HBox(10);
         statsBox.setAlignment(Pos.CENTER_LEFT);
         Region statsPill = createModernStatsPill();
         statsBox.getChildren().add(statsPill);
-        
+
         titleBox.getChildren().addAll(titleLbl, statsBox);
 
         Region spacer = new Region();
@@ -71,22 +72,25 @@ public class VendorManagementView extends VBox implements RefreshableView {
         searchContainer.setAlignment(Pos.CENTER_LEFT);
         searchContainer.setPadding(new Insets(0, 16, 0, 16));
         searchContainer.setPrefHeight(45);
-        searchContainer.setStyle("-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #E2E8F0; -fx-border-radius: 12; -fx-border-width: 1;");
-        
+        searchContainer.setStyle(
+                "-fx-background-color: white; -fx-background-radius: 12; -fx-border-color: #E2E8F0; -fx-border-radius: 12; -fx-border-width: 1;");
+
         Label searchIcon = new Label("🔍");
         searchIcon.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 14px;");
-        
+
         searchField = new TextField();
         searchField.setPromptText("Search vendors or contacts...");
         searchField.setPrefWidth(300);
-        searchField.setStyle("-fx-background-color: transparent; -fx-padding: 0; -fx-text-fill: #1E293B; -fx-font-size: 13px;");
+        searchField.setStyle(
+                "-fx-background-color: transparent; -fx-padding: 0; -fx-text-fill: #1E293B; -fx-font-size: 13px;");
         searchField.textProperty().addListener((obs, old, val) -> filterVendors(val));
-        
+
         searchContainer.getChildren().addAll(searchIcon, searchField);
 
         Button addButton = new Button("➕ Add New Vendor");
         addButton.setPrefHeight(45);
-        addButton.setStyle("-fx-background-color: #0D9488; -fx-text-fill: white; -fx-font-weight: 700; -fx-padding: 0 20; -fx-background-radius: 8; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(13,148,136,0.3), 8, 0, 0, 4);");
+        addButton.setStyle(
+                "-fx-background-color: #0D9488; -fx-text-fill: white; -fx-font-weight: 700; -fx-padding: 0 20; -fx-background-radius: 8; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(13,148,136,0.3), 8, 0, 0, 4);");
         addButton.setOnAction(e -> handleAddVendor());
 
         topHeader.getChildren().addAll(titleBox, spacer, searchContainer, addButton);
@@ -102,14 +106,16 @@ public class VendorManagementView extends VBox implements RefreshableView {
         HBox pill = new HBox(8);
         pill.setAlignment(Pos.CENTER_LEFT);
         pill.setPadding(new Insets(4, 12, 4, 12));
-        pill.setStyle("-fx-background-color: #E0F2FE; -fx-background-radius: 20; -fx-border-color: #7DD3FC; -fx-border-radius: 20;");
+        pill.setStyle(
+                "-fx-background-color: #E0F2FE; -fx-background-radius: 20; -fx-border-color: #7DD3FC; -fx-border-radius: 20;");
 
         Label label = new Label("Total Registered:");
-        label.setStyle("-fx-text-fill: #0369A1; -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-transform: uppercase;");
-        
+        label.setStyle(
+                "-fx-text-fill: #0369A1; -fx-font-size: 11px; -fx-font-weight: 700; -fx-text-transform: uppercase;");
+
         Label value = new Label(String.valueOf(vendors.size()));
         value.setStyle("-fx-text-fill: #0369A1; -fx-font-size: 11px; -fx-font-weight: 800;");
-        
+
         vendors.addListener((javafx.collections.ListChangeListener<VendorEntity>) c -> {
             value.setText(String.valueOf(vendors.size()));
         });
@@ -184,14 +190,12 @@ public class VendorManagementView extends VBox implements RefreshableView {
 
             {
                 editBtn = createModernActionButton(
-                    "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
-                    "#FFF3E0", "#F57C00", "#FFE0B2", "Edit Vendor"
-                );
+                        "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+                        "#FFF3E0", "#F57C00", "#FFE0B2", "Edit Vendor");
 
                 deleteBtn = createModernActionButton(
-                    "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
-                    "#FFEBEE", "#D32F2F", "#FFCDD2", "Soft Delete"
-                );
+                        "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
+                        "#FFEBEE", "#D32F2F", "#FFCDD2", "Soft Delete");
 
                 editBtn.setOnAction(e -> {
                     VendorEntity v = getTableView().getItems().get(getIndex());
@@ -222,7 +226,8 @@ public class VendorManagementView extends VBox implements RefreshableView {
         return table;
     }
 
-    private Button createModernActionButton(String svgPath, String bgColor, String iconColor, String hoverColor, String tooltip) {
+    private Button createModernActionButton(String svgPath, String bgColor, String iconColor, String hoverColor,
+            String tooltip) {
         javafx.scene.shape.SVGPath path = new javafx.scene.shape.SVGPath();
         path.setContent(svgPath);
         path.setFill(javafx.scene.paint.Color.web(iconColor));
@@ -232,8 +237,9 @@ public class VendorManagementView extends VBox implements RefreshableView {
         Button btn = new Button();
         btn.setGraphic(path);
         btn.setTooltip(new Tooltip(tooltip));
-        
-        String baseStyle = String.format("-fx-background-color: %s; -fx-padding: 6 12; -fx-background-radius: 6; -fx-cursor: hand;", bgColor);
+
+        String baseStyle = String.format(
+                "-fx-background-color: %s; -fx-padding: 6 12; -fx-background-radius: 6; -fx-cursor: hand;", bgColor);
         btn.setStyle(baseStyle);
 
         btn.setOnMouseEntered(e -> btn.setStyle(baseStyle.replace(bgColor, hoverColor)));
@@ -249,7 +255,7 @@ public class VendorManagementView extends VBox implements RefreshableView {
             LOGGER.info("Loaded {} vendors", allVendors.size());
         } catch (Exception e) {
             LOGGER.error("Failed to load vendors", e);
-            new Alert(Alert.AlertType.ERROR, "Failed to load vendors: " + e.getMessage()).show();
+            AlertUtils.showError("Error", "Failed to load vendors: " + e.getMessage());
         }
     }
 
@@ -280,11 +286,11 @@ public class VendorManagementView extends VBox implements RefreshableView {
             try {
                 repository.insert(vendor);
                 loadVendors();
-                new Alert(Alert.AlertType.INFORMATION, "Vendor added successfully!").show();
+                AlertUtils.showInfo("Information", "Vendor added successfully!");
                 LOGGER.info("Added new vendor: {}", vendor.getName());
             } catch (Exception e) {
                 LOGGER.error("Failed to add vendor", e);
-                new Alert(Alert.AlertType.ERROR, "Failed to add vendor: " + e.getMessage()).show();
+                AlertUtils.showError("Error", "Failed to add vendor: " + e.getMessage());
             }
         });
     }
@@ -296,36 +302,29 @@ public class VendorManagementView extends VBox implements RefreshableView {
             try {
                 repository.update(updated);
                 loadVendors();
-                new Alert(Alert.AlertType.INFORMATION, "Vendor updated successfully!").show();
+                AlertUtils.showInfo("Information", "Vendor updated successfully!");
                 LOGGER.info("Updated vendor ID: {}", updated.getId());
             } catch (Exception e) {
                 LOGGER.error("Failed to update vendor", e);
-                new Alert(Alert.AlertType.ERROR, "Failed to update vendor: " + e.getMessage()).show();
+                AlertUtils.showError("Error", "Failed to update vendor: " + e.getMessage());
             }
         });
     }
 
     private void handleDeleteVendor(VendorEntity vendor) {
-        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,
+        if (AlertUtils.showConfirmation("Delete Vendor",
                 "Are you sure you want to delete vendor '" + vendor.getName() + "'?\n\n" +
-                        "This will not remove the vendor from the database, just mark as deleted.",
-                ButtonType.YES, ButtonType.NO);
-        confirmation.setTitle("Confirm Delete");
-        confirmation.setHeaderText("Soft Delete Vendor");
-
-        confirmation.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.YES) {
-                try {
-                    repository.softDelete(vendor.getId());
-                    loadVendors();
-                    new Alert(Alert.AlertType.INFORMATION, "Vendor deleted successfully!").show();
-                    LOGGER.info("Soft-deleted vendor ID: {}", vendor.getId());
-                } catch (Exception e) {
-                    LOGGER.error("Failed to delete vendor", e);
-                    new Alert(Alert.AlertType.ERROR, "Failed to delete vendor: " + e.getMessage()).show();
-                }
+                        "This will not remove the vendor from the database, just mark as deleted.")) {
+            try {
+                repository.softDelete(vendor.getId());
+                loadVendors();
+                AlertUtils.showInfo("Vendor Deleted", "Vendor deleted successfully!");
+                LOGGER.info("Soft-deleted vendor ID: {}", vendor.getId());
+            } catch (Exception e) {
+                LOGGER.error("Failed to delete vendor", e);
+                AlertUtils.showError("Error", "Failed to delete vendor: " + e.getMessage());
             }
-        });
+        }
     }
 
     @Override
