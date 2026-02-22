@@ -29,6 +29,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.lax.sme_manager.ui.component.AlertUtils;
 
 /**
  * Cheque Settings — Sidebar view for editing and saving cheque alignment.
@@ -60,6 +61,9 @@ public class ChequeSettingsView extends VBox {
     private Spinner<Double> offsetYSpinner;
     private Spinner<Double> dateOffsetXSpinner;
     private Spinner<Double> dateOffsetYSpinner;
+
+    private final com.lax.sme_manager.repository.ChequeBookRepository bookRepo = new com.lax.sme_manager.repository.ChequeBookRepository();
+    private VBox chequeBookListContainer;
 
     // Standard Indian Cheque: 203mm (+/- 1mm) x 95mm
     private static final double ACTUAL_WIDTH_MM = 210.0;
@@ -150,6 +154,9 @@ public class ChequeSettingsView extends VBox {
         // --- Calibration Panel ---
         VBox calibrationPanel = createCalibrationPanel();
 
+        // --- Cheque Book Management Panel ---
+        VBox chequeBookPanel = createChequeBookPanel();
+
         // --- Buttons ---
         HBox buttonBar = new HBox(15);
         buttonBar.setAlignment(Pos.CENTER_LEFT);
@@ -173,7 +180,8 @@ public class ChequeSettingsView extends VBox {
         buttonBar.getChildren().addAll(saveBtn, resetBtn, restoreBtn, helpBtn);
 
         // --- Layout ---
-        VBox content = new VBox(16, title, subtitle, canvasContainer, coordPanel, calibrationPanel, buttonBar);
+        VBox content = new VBox(16, title, subtitle, canvasContainer, coordPanel, calibrationPanel, chequeBookPanel,
+                buttonBar);
         content.setPadding(new Insets(0));
 
         ScrollPane scroll = new ScrollPane(content);
@@ -205,26 +213,35 @@ public class ChequeSettingsView extends VBox {
             rect.setFill(Color.TRANSPARENT);
             rect.setStroke(Color.LIGHTGRAY);
             dateBoxes.getChildren().add(rect);
-
-            // // Add extra space after DD and MM (i==1 and i==3)
-            // if (i == 1 || i == 3) {
-            // Rectangle spacer = new Rectangle(boxSize / 2, boxSize);
-            // spacer.setFill(Color.TRANSPARENT);
-            // dateBoxes.getChildren().add(spacer);
-            // }
         }
 
         // "Pay" line at ~37mm X, 21mm Y
-        Label payLabel = new Label("Pay _____________________________________________");
-        payLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: lightgray; -fx-font-family: 'Courier New';");
-        payLabel.setLayoutX(31 * MM_TO_PX);
-        payLabel.setLayoutY(24 * MM_TO_PX);
+        Label payLabel = new Label("Pay");
+        payLabel.setStyle(
+                "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: black; -fx-font-family: 'Courier New';");
+        payLabel.setLayoutX(28 * MM_TO_PX);
+        payLabel.setLayoutY(22 * MM_TO_PX);
+
+        Rectangle payBox = new Rectangle(120 * MM_TO_PX, 8 * MM_TO_PX);
+        payBox.setFill(Color.TRANSPARENT);
+        payBox.setStroke(Color.LIGHTGRAY);
+        payBox.setStrokeWidth(1);
+        payBox.setLayoutX(37 * MM_TO_PX);
+        payBox.setLayoutY(19 * MM_TO_PX);
 
         // "Amount" words line at ~37mm X, 30mm Y
-        Label amountLabel = new Label("Rupees _________________________________________");
-        amountLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;-fx-text-fill: lightgray; -fx-font-family: 'Courier New';");
-        amountLabel.setLayoutX(31 * MM_TO_PX);
-        amountLabel.setLayoutY(33 * MM_TO_PX);
+        Label amountLabel = new Label("Rupees");
+        amountLabel.setStyle(
+                "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: black; -fx-font-family: 'Courier New';");
+        amountLabel.setLayoutX(24 * MM_TO_PX);
+        amountLabel.setLayoutY(30 * MM_TO_PX);
+
+        Rectangle amountBox = new Rectangle(110 * MM_TO_PX, 8 * MM_TO_PX);
+        amountBox.setFill(Color.TRANSPARENT);
+        amountBox.setStroke(Color.LIGHTGRAY);
+        amountBox.setStrokeWidth(1);
+        amountBox.setLayoutX(37 * MM_TO_PX);
+        amountBox.setLayoutY(30 * MM_TO_PX);
 
         // Draw MICR Band (Bottom 19mm is blank white space)
         Rectangle micrBand = new Rectangle(PREVIEW_WIDTH_PX, 19 * MM_TO_PX);
@@ -239,7 +256,7 @@ public class ChequeSettingsView extends VBox {
         rupeeSymbol.setLayoutY(37 * MM_TO_PX);
         rupeeSymbol.setPrefSize(35 * MM_TO_PX, 8 * MM_TO_PX);
 
-        chequePane.getChildren().addAll(dateBoxes, payLabel, amountLabel, micrBand, rupeeSymbol);
+        chequePane.getChildren().addAll(dateBoxes, payLabel, payBox, amountLabel, amountBox, micrBand, rupeeSymbol);
     }
 
     private void addSampleElements() {
@@ -255,7 +272,7 @@ public class ChequeSettingsView extends VBox {
             } else {
                 x = (config.getDateX() > 0 ? config.getDateX() : 159.79) + (i * ChequeConfig.DATE_DIGIT_SPACING_MM)
                         + config.getDateOffsetX();
-                y = (config.getDateY() > 0 ? config.getDateY() : 9.04) + config.getDateOffsetY();
+                y = (config.getDateY() > 0 ? config.getDateY() : 9.09) + config.getDateOffsetY();
             }
             lblDateDigits[i] = createDraggableLabel(String.valueOf(SAMPLE_DATE.charAt(i)), x, y,
                     "Date Digit " + (i + 1), 18); // adjusted font size slightly for scale
@@ -286,7 +303,7 @@ public class ChequeSettingsView extends VBox {
         lblAmountDigits = createDraggableLabel(digits,
                 config.getAmountDigitsX() > 0 ? config.getAmountDigitsX() : 163.55,
                 config.getAmountDigitsY() > 0 ? config.getAmountDigitsY() : 37.78,
-                "Amount Digits", 14);
+                "Amount Digits", 16);
 
         chequePane.getChildren().addAll(lblPayee, lblAmountWords, lblAmountDigits);
 
@@ -552,68 +569,59 @@ public class ChequeSettingsView extends VBox {
             onSaveCallback.run();
         }
 
-        new Alert(Alert.AlertType.INFORMATION, "✅ Alignment saved! All future cheque prints will use these positions.")
-                .show();
+        AlertUtils.showInfo("Information", "✅ Alignment saved! All future cheque prints will use these positions.");
     }
 
     private void resetToDefaults() {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+        if (AlertUtils.showConfirmation("Reset Alignment",
                 "Reset all positions to factory defaults?\n\n" +
                         "Your current settings will be backed up.\n" +
-                        "Use ♻️ Restore Previous to undo this.",
-                ButtonType.YES, ButtonType.NO);
-        confirm.setHeaderText("Reset Alignment");
-        confirm.showAndWait().ifPresent(r -> {
-            if (r == ButtonType.YES) {
-                // Backup current config before resetting
-                savedConfig = config;
+                        "Use \u266B Restore Previous to undo this.")) {
+            // Backup current config before resetting
+            savedConfig = config;
 
-                config = ChequeConfig.getFactoryDefaults();
-                configRepo.saveConfig(config);
+            config = ChequeConfig.getFactoryDefaults();
+            configRepo.saveConfig(config);
 
-                offsetXSpinner.getValueFactory().setValue(0.0);
-                offsetYSpinner.getValueFactory().setValue(0.0);
+            offsetXSpinner.getValueFactory().setValue(0.0);
+            offsetYSpinner.getValueFactory().setValue(0.0);
 
-                rebuildPreview();
+            rebuildPreview();
 
-                if (onSaveCallback != null) {
-                    onSaveCallback.run();
-                }
-
-                new Alert(Alert.AlertType.INFORMATION,
-                        "🔄 Reset to factory defaults.\nUse ♻️ Restore Previous to undo.").show();
+            if (onSaveCallback != null) {
+                onSaveCallback.run();
             }
-        });
+
+            AlertUtils.showInfo("Reset Complete",
+                    "\uD83D\uDD04 Reset to factory defaults.\nUse \u267B Restore Previous to undo.");
+        }
     }
 
     private void restorePrevious() {
         if (savedConfig == null) {
-            new Alert(Alert.AlertType.WARNING, "No previous settings to restore.\n\n" +
-                    "This button works after you use Reset to Default.\n" +
-                    "It restores whatever settings you had before the reset.").show();
+            AlertUtils.showWarning("No Previous Settings",
+                    "No previous settings to restore.\n\n" +
+                            "This button works after you use Reset to Default.\n" +
+                            "It restores whatever settings you had before the reset.");
             return;
         }
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                "Restore your previous cheque settings?", ButtonType.YES, ButtonType.NO);
-        confirm.setHeaderText("Restore Previous Settings");
-        confirm.showAndWait().ifPresent(r -> {
-            if (r == ButtonType.YES) {
-                config = savedConfig;
-                savedConfig = null;
-                configRepo.saveConfig(config);
+        if (AlertUtils.showConfirmation("Restore Previous Settings",
+                "Restore your previous cheque settings?")) {
+            config = savedConfig;
+            savedConfig = null;
+            configRepo.saveConfig(config);
 
-                offsetXSpinner.getValueFactory().setValue(config.getOffsetX());
-                offsetYSpinner.getValueFactory().setValue(config.getOffsetY());
+            offsetXSpinner.getValueFactory().setValue(config.getOffsetX());
+            offsetYSpinner.getValueFactory().setValue(config.getOffsetY());
 
-                rebuildPreview();
+            rebuildPreview();
 
-                if (onSaveCallback != null) {
-                    onSaveCallback.run();
-                }
-
-                new Alert(Alert.AlertType.INFORMATION, "♻️ Previous settings restored!").show();
+            if (onSaveCallback != null) {
+                onSaveCallback.run();
             }
-        });
+
+            AlertUtils.showInfo("Restored", "\u267B Previous settings restored!");
+        }
     }
 
     private void rebuildPreview() {
@@ -643,6 +651,7 @@ public class ChequeSettingsView extends VBox {
 
     private void showFeedGuide() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        AlertUtils.styleDialog(alert);
         alert.setTitle("Printer Feed Guide");
         alert.setHeaderText("How to print a cheque correctly");
         alert.setContentText("CRITICAL PRINTER SETTINGS:\n\n" +
@@ -654,5 +663,292 @@ public class ChequeSettingsView extends VBox {
                 "If text is slightly shifted, use X/Y Offset (±1 to ±3mm max).\n" +
                 "If text is heavily misaligned, fix paper feed — NOT the offsets.");
         alert.show();
+    }
+
+    private VBox createChequeBookPanel() {
+        VBox panel = new VBox(10);
+        panel.setPadding(new Insets(16));
+        panel.setStyle(
+                "-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8;");
+
+        HBox header = new HBox(15);
+        header.setAlignment(Pos.CENTER_LEFT);
+        Label title = new Label("📒 Cheque Book Management");
+        title.setStyle("-fx-font-weight: bold; -fx-text-fill: #334155; -fx-font-size: 16px;");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button addBtn = new Button("+ Add New Book");
+        addBtn.setStyle(LaxTheme.getButtonStyle(LaxTheme.ButtonType.SECONDARY));
+        addBtn.setOnAction(e -> showAddBookDialog());
+
+        header.getChildren().addAll(title, spacer, addBtn);
+
+        chequeBookListContainer = new VBox(8);
+        refreshBooksTable();
+
+        panel.getChildren().addAll(header, chequeBookListContainer);
+        return panel;
+    }
+
+    public void refreshBooksTable() {
+        chequeBookListContainer.getChildren().clear();
+        java.util.List<com.lax.sme_manager.repository.model.ChequeBook> books = bookRepo.getAllBooks();
+
+        if (books.isEmpty()) {
+            Label noBooks = new Label("No cheque books added yet.");
+            noBooks.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic;");
+            chequeBookListContainer.getChildren().add(noBooks);
+            return;
+        }
+
+        for (com.lax.sme_manager.repository.model.ChequeBook book : books) {
+            HBox row = new HBox(15);
+            row.setAlignment(Pos.CENTER_LEFT);
+            row.setPadding(new Insets(10));
+            row.setStyle("-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 6;");
+
+            VBox info = new VBox(4);
+            Label nameLbl = new Label(book.getBookName() + " (" + book.getBankName() + ")");
+            nameLbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #334155;");
+            Label rangeLbl = new Label(String.format("Range: %06d - %06d", book.getStartNumber(), book.getEndNumber()));
+            rangeLbl.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px;");
+
+            String statusText;
+            String statusColor;
+            if (book.isExhausted()) {
+                statusText = "Exhausted";
+                statusColor = "#ef4444"; // Red
+            } else if (book.isActive()) {
+                statusText = "Active (" + book.getRemainingLeaves() + " left)";
+                statusColor = "#10b981"; // Green
+            } else {
+                statusText = "Available (" + book.getRemainingLeaves() + " left)";
+                statusColor = "#64748b"; // Gray
+            }
+            Label statusLbl = new Label(statusText);
+            statusLbl.setStyle("-fx-font-weight: bold; -fx-text-fill: " + statusColor + "; -fx-font-size: 11px;");
+
+            info.getChildren().addAll(nameLbl, rangeLbl, statusLbl);
+
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            Button setActiveBtn = new Button("Set Active");
+            setActiveBtn.setStyle(
+                    "-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 4; -fx-cursor: hand;");
+            setActiveBtn.setDisable(book.isActive() || book.isExhausted());
+            setActiveBtn.setOnAction(e -> {
+                bookRepo.activateHook(book.getId());
+                refreshBooksTable();
+            });
+
+            Button btnManage = new Button("📄 Manage Leaves");
+            btnManage.setStyle(
+                    "-fx-background-color: white; -fx-border-color: #cbd5e1; -fx-border-radius: 4; -fx-cursor: hand;");
+            btnManage.setOnAction(e -> showManageLeavesDialog(book));
+
+            Button deleteBtn = new Button("🗑️");
+            deleteBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+            deleteBtn.setOnAction(e -> {
+                if (AlertUtils.showConfirmation("Delete Cheque Book", "Delete this book?")) {
+                    bookRepo.deleteBook(book.getId());
+                    refreshBooksTable();
+                }
+            });
+
+            row.getChildren().addAll(info, spacer, setActiveBtn, btnManage, deleteBtn);
+            chequeBookListContainer.getChildren().add(row);
+        }
+    }
+
+    private void showAddBookDialog() {
+        Dialog<com.lax.sme_manager.repository.model.ChequeBook> dialog = new Dialog<>();
+        dialog.setTitle("Add New Cheque Book");
+        dialog.setHeaderText("Enter cheque book details.");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        AlertUtils.styleDialog(dialog);
+
+        javafx.scene.layout.GridPane grid = new javafx.scene.layout.GridPane();
+        grid.setHgap(15);
+        grid.setVgap(15);
+        grid.setPadding(new Insets(20));
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("e.g. HDFC Current A/C");
+        TextField bankField = new TextField();
+        bankField.setPromptText("e.g. HDFC Bank");
+        TextField startField = new TextField();
+        startField.setPromptText("e.g. 000001");
+        TextField endField = new TextField();
+        endField.setPromptText("e.g. 000050");
+        CheckBox activeCheck = new CheckBox("Set as Active Book");
+        activeCheck.setSelected(true);
+
+        grid.add(new Label("Book Name:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Bank Name:"), 0, 1);
+        grid.add(bankField, 1, 1);
+        grid.add(new Label("Start Num:"), 0, 2);
+        grid.add(startField, 1, 2);
+        grid.add(new Label("End Num:"), 0, 3);
+        grid.add(endField, 1, 3);
+        grid.add(activeCheck, 1, 4);
+
+        dialog.getDialogPane().setContent(grid);
+
+        final Button saveButton = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
+        saveButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+            try {
+                if (nameField.getText().trim().isEmpty() || startField.getText().trim().isEmpty()
+                        || endField.getText().trim().isEmpty()) {
+                    AlertUtils.showError("Error", "Please fill required fields.");
+                    event.consume();
+                    return;
+                }
+                long start = Long.parseLong(startField.getText().trim());
+                long end = Long.parseLong(endField.getText().trim());
+                if (start > end) {
+                    AlertUtils.showError("Error", "Start number must be <= end number.");
+                    event.consume();
+                }
+            } catch (NumberFormatException e) {
+                AlertUtils.showError("Error", "Start and end numbers must be valid digits.");
+                event.consume();
+            }
+        });
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                com.lax.sme_manager.repository.model.ChequeBook b = new com.lax.sme_manager.repository.model.ChequeBook();
+                b.setBookName(nameField.getText().trim());
+                b.setBankName(bankField.getText().trim());
+                long start = Long.parseLong(startField.getText().trim());
+                b.setStartNumber(start);
+                b.setEndNumber(Long.parseLong(endField.getText().trim()));
+                b.setNextNumber(start);
+                b.setActive(activeCheck.isSelected());
+                return b;
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(b -> {
+            bookRepo.saveBook(b);
+            refreshBooksTable();
+        });
+    }
+
+    private void showManageLeavesDialog(com.lax.sme_manager.repository.model.ChequeBook book) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Manage Leaves: " + book.getBookName());
+        dialog.setHeaderText("Mark leaves as Cancelled or Void to skip them during printing.");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
+        AlertUtils.styleDialog(dialog);
+
+        VBox root = new VBox(20);
+        root.setPadding(new Insets(20));
+        root.setPrefWidth(450);
+
+        // --- Quick Cancel Form ---
+        VBox cancelForm = new VBox(10);
+        cancelForm.setStyle(
+                "-fx-background-color: #f8fafc; -fx-padding: 15; -fx-border-color: #e2e8f0; -fx-border-radius: 8;");
+        Label formTitle = new Label("Mark Leaf Status");
+        formTitle.setStyle("-fx-font-weight: bold;");
+
+        HBox inputs = new HBox(10);
+        inputs.setAlignment(Pos.CENTER_LEFT);
+
+        TextField leafNumField = new TextField();
+        leafNumField.setPromptText("Leaf Number");
+        leafNumField.setPrefWidth(120);
+
+        ComboBox<String> statusCombo = new ComboBox<>();
+        statusCombo.getItems().addAll("CANCELLED", "VOID", "MISPRINT");
+        statusCombo.setValue("CANCELLED");
+
+        Button btnMark = new Button("Mark");
+        btnMark.setStyle(LaxTheme.getButtonStyle(LaxTheme.ButtonType.PRIMARY));
+
+        inputs.getChildren().addAll(leafNumField, statusCombo, btnMark);
+
+        TextField remarksField = new TextField();
+        remarksField.setPromptText("Remarks (optional)");
+        cancelForm.getChildren().addAll(formTitle, inputs, remarksField);
+
+        // --- Current Log List ---
+        VBox logContainer = new VBox(8);
+        ScrollPane logScroll = new ScrollPane(logContainer);
+        logScroll.setFitToWidth(true);
+        logScroll.setPrefHeight(250);
+
+        // Recursive runnable for self-refreshing list
+        final Runnable[] refreshRef = new Runnable[1];
+        refreshRef[0] = () -> {
+            logContainer.getChildren().clear();
+            List<Long> cancelled = bookRepo.getLeavesWithStatus(book.getId(), List.of("CANCELLED", "VOID", "MISPRINT"));
+
+            if (cancelled.isEmpty()) {
+                logContainer.getChildren().add(new Label("No skipped leaves recorded yet."));
+            } else {
+                Label skipTitle = new Label("Skipped / Manually Marked Leaves:");
+                skipTitle.setStyle("-fx-font-weight: bold; -fx-padding: 0 0 5 0;");
+                logContainer.getChildren().add(skipTitle);
+
+                for (Long num : cancelled) {
+                    HBox item = new HBox(10);
+                    item.setAlignment(Pos.CENTER_LEFT);
+                    Label lbl = new Label(String.format("#%06d - %s", num, "CANCELLED"));
+                    lbl.setStyle("-fx-text-fill: #ef4444; -fx-font-family: 'Courier New';");
+                    Region s = new Region();
+                    HBox.setHgrow(s, Priority.ALWAYS);
+
+                    Button btnRestore = new Button("Restore");
+                    btnRestore.setStyle("-fx-font-size: 10px;");
+                    btnRestore.setOnAction(e -> {
+                        String sql = "DELETE FROM cheque_usage_log WHERE book_id = ? AND leaf_number = ?";
+                        try (java.sql.Connection conn = com.lax.sme_manager.util.DatabaseManager.getConnection();
+                                java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                            pstmt.setInt(1, book.getId());
+                            pstmt.setLong(2, num);
+                            pstmt.executeUpdate();
+                            refreshRef[0].run();
+                            refreshBooksTable();
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    });
+                    item.getChildren().addAll(lbl, s, btnRestore);
+                    logContainer.getChildren().add(item);
+                }
+            }
+        };
+
+        btnMark.setOnAction(ev -> {
+            try {
+                String input = leafNumField.getText().trim();
+                if (input.isEmpty())
+                    return;
+                long num = Long.parseLong(input);
+                if (num < book.getStartNumber() || num > book.getEndNumber()) {
+                    AlertUtils.showError("Invalid Number", "Leaf number out of book range.");
+                    return;
+                }
+                bookRepo.markLeafStatus(book.getId(), num, statusCombo.getValue(), remarksField.getText());
+                leafNumField.clear();
+                remarksField.clear();
+                refreshRef[0].run();
+                refreshBooksTable();
+            } catch (Exception ex) {
+                AlertUtils.showError("Error", "Please enter a valid numeric leaf number.");
+            }
+        });
+
+        refreshRef[0].run();
+        root.getChildren().addAll(cancelForm, new Label("Usage History:"), logScroll);
+        dialog.getDialogPane().setContent(root);
+        dialog.showAndWait();
     }
 }

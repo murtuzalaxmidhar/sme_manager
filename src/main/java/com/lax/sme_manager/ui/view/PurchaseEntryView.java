@@ -312,7 +312,8 @@ public class PurchaseEntryView extends VBox implements RefreshableView {
 
         // Submit & Print Cheque Button (visible only when payment mode is CHEQUE)
         Button submitPrintBtn = new Button("Submit & Print Cheque 🖨️");
-        submitPrintBtn.setStyle("-fx-background-color: #0D9488; -fx-text-fill: white; -fx-font-weight: 700; -fx-padding: 10 20; -fx-background-radius: 8; -fx-cursor: hand;");
+        submitPrintBtn.setStyle(
+                "-fx-background-color: #0D9488; -fx-text-fill: white; -fx-font-weight: 700; -fx-padding: 10 20; -fx-background-radius: 8; -fx-cursor: hand;");
         submitPrintBtn.setPrefHeight(LaxTheme.ComponentSizes.BUTTON_HEIGHT_MD);
         submitPrintBtn.setOnAction(e -> handleSubmitAndPrint());
 
@@ -343,9 +344,10 @@ public class PurchaseEntryView extends VBox implements RefreshableView {
                     result.grandTotal,
                     result.chequeDate,
                     true,
-                    result.purchaseId
-            );
-            new ChequePreviewDialog(chequeData, () -> {}).show();
+                    result.purchaseId,
+                    null);
+            new ChequePreviewDialog(chequeData, () -> {
+            }).show();
 
             // Clear vendor combo after reset
             vendorComboBox.getEditor().clear();

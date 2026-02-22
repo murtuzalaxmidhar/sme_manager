@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import com.lax.sme_manager.ui.component.AlertUtils;
 
 public class ChequeWriterView extends VBox {
     private final VendorRepository vendorRepository = new VendorRepository();
@@ -382,14 +383,14 @@ public class ChequeWriterView extends VBox {
             LocalDate date = datePicker.getValue();
             boolean isAcPayee = acPayeeCheck.isSelected();
 
-            ChequeData data = new ChequeData(payee, amount, date, isAcPayee, null);
+            ChequeData data = new ChequeData(payee, amount, date, isAcPayee, null, null);
             new ChequePreviewDialog(data).show();
 
         } catch (NumberFormatException e) {
-            new Alert(Alert.AlertType.ERROR, "Please enter a valid amount.").show();
+            AlertUtils.showError("Error", "Please enter a valid amount.");
         } catch (Exception e) {
             e.printStackTrace();
-            new Alert(Alert.AlertType.ERROR, "Error: " + e.getMessage()).show();
+            AlertUtils.showError("Error", "Error: " + e.getMessage());
         }
     }
 

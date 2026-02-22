@@ -29,6 +29,7 @@ import javafx.scene.effect.BlendMode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.lax.sme_manager.ui.component.AlertUtils;
 
 /**
  * Clean Cheque Preview Dialog — Only for previewing and printing.
@@ -40,6 +41,7 @@ public class ChequePreviewDialog extends Dialog<Void> {
     private final ChequeData chequeData;
     private final ChequeConfigRepository configRepo;
     private final ChequePrintService printService;
+    private final com.lax.sme_manager.repository.ChequeBookRepository bookRepo;
 
     // Use current saved config
     private ChequeConfig config;
@@ -50,7 +52,10 @@ public class ChequePreviewDialog extends Dialog<Void> {
     private com.lax.sme_manager.repository.model.SignatureConfig activeSig;
 
     private ComboBox<String> bankSelector;
+    private ComboBox<com.lax.sme_manager.repository.model.ChequeBook> bookSelector;
     private TextField chequeNumberField;
+    private Label warningLabel;
+    private Button btnPrint;
     private Runnable onPrintComplete;
 
     // Standard Indian Cheque: 203mm x 95mm — sized to fit within dialog
@@ -70,6 +75,7 @@ public class ChequePreviewDialog extends Dialog<Void> {
         this.configRepo = new ChequeConfigRepository();
         this.sigRepo = new com.lax.sme_manager.repository.SignatureRepository();
         this.printService = new ChequePrintService();
+        this.bookRepo = new com.lax.sme_manager.repository.ChequeBookRepository();
 
         // Load config from DB (or factory defaults if missing)
         this.config = configRepo.getConfig();
@@ -115,17 +121,49 @@ public class ChequePreviewDialog extends Dialog<Void> {
         loadBankTemplates();
         bankSelector.setOnAction(e -> handleBankSelection());
 
+        Label bookLbl = new Label("Cheque Book:");
+        bookLbl.setStyle("-fx-font-weight: bold;");
+
+        bookSelector = new ComboBox<>();
+        bookSelector.setPrefWidth(200);
+        loadChequeBooks();
+
         Label chqLbl = new Label("Cheque No:");
         chqLbl.setStyle("-fx-font-weight: bold;");
 
         chequeNumberField = new TextField();
         chequeNumberField.setPromptText("Enter 6-digit number");
-        chequeNumberField.setPrefWidth(150);
+        chequeNumberField.setPrefWidth(120);
+
+        if (chequeData.chequeNumber() != null && !chequeData.chequeNumber().isEmpty()) {
+            chequeNumberField.setText(chequeData.chequeNumber());
+            chequeNumberField.setEditable(false); // If passed in (like bulk print), lock it
+        } else if (bookSelector.getValue() != null) {
+            chequeNumberField.setText(String.format("%06d", bookSelector.getValue().getNextNumber()));
+        }
+
+        bookSelector.setOnAction(e -> {
+            com.lax.sme_manager.repository.model.ChequeBook selected = bookSelector.getValue();
+            if (selected != null && (chequeData.chequeNumber() == null || chequeData.chequeNumber().isEmpty())) {
+                chequeNumberField.setText(String.format("%06d", selected.getNextNumber()));
+                updateWarningLabel(selected);
+            }
+        });
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        topToolbar.getChildren().addAll(bankLbl, bankSelector, new Label("  |  "), chqLbl, chequeNumberField, spacer);
+        topToolbar.getChildren().addAll(bankLbl, bankSelector, new Label("  |  "), bookLbl, bookSelector,
+                new Label("  |  "), chqLbl, chequeNumberField, spacer);
+
+        warningLabel = new Label();
+        warningLabel.setStyle("-fx-text-fill: #ef4444; -fx-font-weight: bold;");
+        if (bookSelector.getValue() != null) {
+            updateWarningLabel(bookSelector.getValue());
+        }
+
+        VBox topSection = new VBox(5, topToolbar, warningLabel);
+        topSection.setAlignment(Pos.CENTER_LEFT);
 
         // --- Cheque Canvas ---
         StackPane canvasContainer = new StackPane();
@@ -166,14 +204,19 @@ public class ChequePreviewDialog extends Dialog<Void> {
         HBox toolbar = new HBox(15);
         toolbar.setAlignment(Pos.CENTER);
 
-        Button btnPrint = new Button("🖨️ Print Cheque");
+        btnPrint = new Button("🖨️ Print Cheque");
         btnPrint.setStyle(
                 LaxTheme.getButtonStyle(LaxTheme.ButtonType.PRIMARY) + "; -fx-padding: 8 24; -fx-font-size: 14px;");
         btnPrint.setOnAction(e -> print());
 
+        // Update initial state of print button based on book selection
+        if (bookSelector.getValue() != null) {
+            btnPrint.setDisable(bookSelector.getValue().isExhausted());
+        }
+
         toolbar.getChildren().addAll(btnPrint);
 
-        root.getChildren().addAll(topToolbar, canvasContainer, toolbar);
+        root.getChildren().addAll(topSection, canvasContainer, toolbar);
         getDialogPane().setContent(root);
 
         if (config.getBankName() != null && !config.getBankName().isEmpty()) {
@@ -340,11 +383,12 @@ public class ChequePreviewDialog extends Dialog<Void> {
         String chqNo = chequeNumberField.getText().trim();
         if (chequeData.purchaseId() != null) {
             if (chqNo.isEmpty() || chqNo.length() < 6) {
-                new Alert(Alert.AlertType.ERROR, "Please enter a valid Cheque Number.").show();
+                AlertUtils.showError("Error", "Please enter a valid Cheque Number.");
                 return;
             }
             if (isChequeNumberDuplicate(chqNo)) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
+                AlertUtils.styleDialog(alert);
                 alert.setTitle("Security Warning");
                 alert.setHeaderText("Duplicate Cheque Number");
                 alert.setContentText("Cheque number " + chqNo + " has already been used.");
@@ -354,17 +398,73 @@ public class ChequePreviewDialog extends Dialog<Void> {
         }
         try {
             printService.printSilent(config, chequeData);
+
+            // Increment the cheque book counter if a book is selected and we actually
+            // printed
+            if (bookSelector.getValue() != null
+                    && (chequeData.chequeNumber() == null || chequeData.chequeNumber().isEmpty())) {
+                // If it was a single standalone print that consumed a leaf
+                bookRepo.consumeLeaves(bookSelector.getValue().getId(), 1);
+            }
+
             if (chequeData.purchaseId() != null) {
                 markPurchaseAsPaid(chequeData.purchaseId(), chqNo);
-                new Alert(Alert.AlertType.INFORMATION, "Print successful! Purchase marked as PAID.").show();
+                AlertUtils.showInfo("Information", "Print successful! Purchase marked as PAID.");
             } else {
-                new Alert(Alert.AlertType.INFORMATION, "Print job sent successfully.").show();
+                AlertUtils.showInfo("Information", "Print job sent successfully.");
             }
             if (onPrintComplete != null)
                 javafx.application.Platform.runLater(onPrintComplete);
             close();
         } catch (Exception e) {
-            new Alert(Alert.AlertType.ERROR, "Printing Failed: " + e.getMessage()).show();
+            AlertUtils.showError("Error", "Printing Failed: " + e.getMessage());
+        }
+    }
+
+    private void loadChequeBooks() {
+        java.util.List<com.lax.sme_manager.repository.model.ChequeBook> books = bookRepo.getAllBooks();
+        bookSelector.setItems(javafx.collections.FXCollections.observableArrayList(books));
+
+        bookSelector.setConverter(new javafx.util.StringConverter<>() {
+            @Override
+            public String toString(com.lax.sme_manager.repository.model.ChequeBook book) {
+                if (book == null)
+                    return "Select Book";
+                return book.getBookName() + (book.isExhausted() ? " (EXHAUSTED)" : "");
+            }
+
+            @Override
+            public com.lax.sme_manager.repository.model.ChequeBook fromString(String string) {
+                return null;
+            }
+        });
+
+        com.lax.sme_manager.repository.model.ChequeBook activeBook = bookRepo.getActiveBook();
+        if (activeBook != null) {
+            // Find the object instance in the list that matches the ID
+            books.stream().filter(b -> b.getId() == activeBook.getId()).findFirst().ifPresent(b -> {
+                bookSelector.setValue(b);
+            });
+        } else if (!books.isEmpty()) {
+            bookSelector.setValue(books.get(0));
+        }
+    }
+
+    private void updateWarningLabel(com.lax.sme_manager.repository.model.ChequeBook book) {
+        if (book.isExhausted()) {
+            warningLabel.setText("⚠️ This cheque book is EXHAUSTED. Please select a different book.");
+            warningLabel.setStyle("-fx-text-fill: #ef4444; -fx-font-weight: bold;"); // Red
+            if (btnPrint != null)
+                btnPrint.setDisable(true);
+        } else if (book.getRemainingLeaves() <= 5) {
+            warningLabel.setText("⚠️ Only " + book.getRemainingLeaves() + " leaves remaining in this book!");
+            warningLabel.setStyle("-fx-text-fill: #eab308; -fx-font-weight: bold;"); // Yellow
+            if (btnPrint != null)
+                btnPrint.setDisable(false);
+        } else {
+            warningLabel.setText("");
+            if (btnPrint != null)
+                btnPrint.setDisable(false);
         }
     }
 

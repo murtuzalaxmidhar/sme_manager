@@ -83,6 +83,15 @@ public class MetricsServiceTest {
         public void delete(Integer id) {
         }
 
+        @Override
+        public void restore(Integer id) {
+        }
+
+        @Override
+        public List<PurchaseEntity> findAllDeleted() {
+            return Collections.emptyList();
+        }
+
         // Unused methods stubbed
         @Override
         public PurchaseEntity save(PurchaseEntity entity) {
