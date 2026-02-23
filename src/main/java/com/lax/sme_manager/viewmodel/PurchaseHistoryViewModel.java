@@ -10,8 +10,11 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.slf4j.Logger;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import com.lax.sme_manager.repository.PrintQueueRepository;
+import com.lax.sme_manager.repository.model.PrintQueueItem;
 
 public class PurchaseHistoryViewModel {
     private static final Logger LOGGER = AppLogger.getLogger(PurchaseHistoryViewModel.class);
@@ -23,6 +26,9 @@ public class PurchaseHistoryViewModel {
     // Data List
     public final ObservableList<PurchaseEntity> purchaseList = FXCollections.observableArrayList();
     public final ObservableList<PurchaseEntity> selectedPurchases = FXCollections.observableArrayList();
+    public final IntegerProperty queueCount = new SimpleIntegerProperty(0);
+
+    private final PrintQueueRepository queueRepository = new PrintQueueRepository();
 
     // Status
     public final BooleanProperty isLoading = new SimpleBooleanProperty(false);
@@ -44,6 +50,8 @@ public class PurchaseHistoryViewModel {
         filterState.filterMinAmount.addListener((obs, old, newVal) -> applyFilters());
         filterState.filterMaxAmount.addListener((obs, old, newVal) -> applyFilters());
         filterState.filterVendorIds.addListener((javafx.collections.ListChangeListener<Integer>) c -> applyFilters());
+
+        refreshQueueCount();
     }
 
     public PurchaseHistoryFilterState getFilterState() {
@@ -164,6 +172,47 @@ public class PurchaseHistoryViewModel {
             Platform.runLater(() -> statusMessage.set("Error bulk deleting: " + ex.getMessage()));
             return null;
         });
+    }
+
+    public void markAsCleared(PurchaseEntity p) {
+        CompletableFuture.runAsync(() -> {
+            historyService.updateStatus(p.getId(), "CLEARED");
+        }).thenRun(() -> Platform.runLater(() -> {
+            loadPurchases();
+            statusMessage.set("Payment marked as CLEARED.");
+        })).exceptionally(ex -> {
+            Platform.runLater(() -> statusMessage.set("Error clearing: " + ex.getMessage()));
+            return null;
+        });
+    }
+
+    public void addToPrintQueue(List<PurchaseEntity> selected) {
+        if (selected == null || selected.isEmpty())
+            return;
+
+        CompletableFuture.runAsync(() -> {
+            for (PurchaseEntity p : selected) {
+                PrintQueueItem item = PrintQueueItem.builder()
+                        .purchaseId(p.getId())
+                        .payeeName(historyService.getVendorName(p.getVendorId()))
+                        .amount(p.getGrandTotal().doubleValue())
+                        .chequeDate(p.getChequeDate() != null ? p.getChequeDate() : LocalDate.now())
+                        .isAcPayee(true)
+                        .build();
+                queueRepository.addItem(item);
+            }
+        }).thenRun(() -> Platform.runLater(() -> {
+            statusMessage.set("Added " + selected.size() + " items to print queue.");
+            refreshQueueCount();
+        })).exceptionally(ex -> {
+            Platform.runLater(() -> statusMessage.set("Error adding to queue: " + ex.getMessage()));
+            return null;
+        });
+    }
+
+    public void refreshQueueCount() {
+        CompletableFuture.supplyAsync(queueRepository::countItems)
+                .thenAccept(count -> Platform.runLater(() -> queueCount.set(count)));
     }
 
     private record HistoryResult(List<PurchaseEntity> data, int filteredCount) {

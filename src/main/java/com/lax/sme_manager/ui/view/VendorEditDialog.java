@@ -2,9 +2,7 @@ package com.lax.sme_manager.ui.view;
 
 import com.lax.sme_manager.repository.model.VendorEntity;
 import com.lax.sme_manager.ui.component.AlertUtils;
-import com.lax.sme_manager.ui.theme.LaxTheme;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 

@@ -11,11 +11,14 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * PurchaseRepository - Implementation of IPurchaseRepository
  */
 public class PurchaseRepository implements IPurchaseRepository {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PurchaseRepository.class);
 
     @Override
     public PurchaseEntity save(PurchaseEntity entity) {
@@ -32,8 +35,8 @@ public class PurchaseRepository implements IPurchaseRepository {
                 "market_fee_percent, commission_percent, market_fee_amount, commission_amount, " +
                 "base_amount, grand_total, notes, payment_mode, " +
                 "advance_paid, status, created_at, updated_at, " +
-                "cheque_number, cheque_date) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "cheque_number, cheque_date, created_by_user) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -44,6 +47,7 @@ public class PurchaseRepository implements IPurchaseRepository {
             pstmt.setObject(idx++, LocalDateTime.now()); // updated_at
             pstmt.setString(idx++, entity.getChequeNumber());
             pstmt.setObject(idx++, entity.getChequeDate());
+            pstmt.setString(idx++, entity.getCreatedByUser() != null ? entity.getCreatedByUser() : "admin");
 
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows == 0) {
@@ -60,6 +64,20 @@ public class PurchaseRepository implements IPurchaseRepository {
             System.err.println("Error inserting purchase: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to save purchase", e);
+        }
+    }
+
+    @Override
+    public void updateStatus(Integer id, String status) {
+        String sql = "UPDATE purchase_entries SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, status);
+            pstmt.setInt(2, id);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error updating status: " + e.getMessage());
+            throw new RuntimeException("Failed to update status", e);
         }
     }
 
@@ -214,6 +232,120 @@ public class PurchaseRepository implements IPurchaseRepository {
     }
 
     @Override
+    public List<PurchaseEntity> findFilteredPurchases(
+            LocalDate startDate, LocalDate endDate, List<Integer> vendorIds,
+            BigDecimal minAmount, BigDecimal maxAmount, Boolean chequeIssued,
+            String searchQuery, int limit, int offset) {
+
+        List<PurchaseEntity> purchases = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT p.* FROM purchase_entries p LEFT JOIN vendors v ON p.vendor_id = v.id WHERE p.is_deleted = 0");
+        List<Object> params = new ArrayList<>();
+
+        buildFilterQuery(sql, params, startDate, endDate, vendorIds, minAmount, maxAmount, chequeIssued,
+                searchQuery);
+
+        sql.append(" ORDER BY p.entry_date DESC, p.id DESC LIMIT ? OFFSET ?");
+        params.add(limit);
+        params.add(offset);
+
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    purchases.add(mapResultSetToEntity(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching filtered purchases: " + e.getMessage());
+        }
+        return purchases;
+    }
+
+    @Override
+    public int countFilteredPurchases(
+            LocalDate startDate, LocalDate endDate, List<Integer> vendorIds,
+            BigDecimal minAmount, BigDecimal maxAmount, Boolean chequeIssued,
+            String searchQuery) {
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT COUNT(p.id) FROM purchase_entries p LEFT JOIN vendors v ON p.vendor_id = v.id WHERE p.is_deleted = 0");
+        List<Object> params = new ArrayList<>();
+
+        buildFilterQuery(sql, params, startDate, endDate, vendorIds, minAmount, maxAmount, chequeIssued,
+                searchQuery);
+
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error counting filtered purchases: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    private void buildFilterQuery(StringBuilder sql, List<Object> params,
+            LocalDate startDate, LocalDate endDate, List<Integer> vendorIds,
+            BigDecimal minAmount, BigDecimal maxAmount, Boolean chequeIssued,
+            String searchQuery) {
+
+        if (startDate != null) {
+            sql.append(" AND p.entry_date >= ?");
+            params.add(startDate);
+        }
+        if (endDate != null) {
+            sql.append(" AND p.entry_date <= ?");
+            params.add(endDate);
+        }
+        if (vendorIds != null && !vendorIds.isEmpty()) {
+            sql.append(" AND p.vendor_id IN (");
+            for (int i = 0; i < vendorIds.size(); i++) {
+                sql.append("?");
+                if (i < vendorIds.size() - 1)
+                    sql.append(", ");
+                params.add(vendorIds.get(i));
+            }
+            sql.append(")");
+        }
+        if (minAmount != null) {
+            sql.append(" AND p.grand_total >= ?");
+            params.add(minAmount);
+        }
+        if (maxAmount != null) {
+            sql.append(" AND p.grand_total <= ?");
+            params.add(maxAmount);
+        }
+        if (chequeIssued != null) {
+            if (chequeIssued) {
+                sql.append(" AND p.cheque_number IS NOT NULL AND p.cheque_number != ''");
+            } else {
+                sql.append(" AND (p.cheque_number IS NULL OR p.cheque_number = '')");
+            }
+        }
+        if (searchQuery != null && !searchQuery.isBlank()) {
+            sql.append(" AND (v.name LIKE ? OR p.cheque_number LIKE ? OR p.status LIKE ?)");
+            String likeQuery = "%" + searchQuery + "%";
+            params.add(likeQuery);
+            params.add(likeQuery);
+            params.add(likeQuery);
+        }
+    }
+
+    @Override
     public List<PurchaseEntity> findTodaysPurchases() {
         return findByDate(LocalDate.now());
     }
@@ -334,12 +466,29 @@ public class PurchaseRepository implements IPurchaseRepository {
     }
 
     @Override
+    public Integer countPendingClearing() {
+        String sql = "SELECT COUNT(*) as pending_count FROM purchase_entries " +
+                "WHERE status = 'PAID' AND is_deleted = 0";
+        try (Connection conn = DatabaseManager.getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt("pending_count");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error counting pending clearing: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    @Override
     public int getLastInsertedId() {
         String sql = "SELECT MAX(id) FROM purchase_entries";
         try (Connection conn = DatabaseManager.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            if (rs.next()) return rs.getInt(1);
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next())
+                return rs.getInt(1);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -417,6 +566,124 @@ public class PurchaseRepository implements IPurchaseRepository {
                 .chequeNumber(rs.getString("cheque_number"))
                 .chequeDate(rs.getObject("cheque_date", LocalDate.class))
                 .isDeleted(rs.getBoolean("is_deleted"))
+                .createdByUser(rs.getString("created_by_user"))
                 .build();
+    }
+
+    @Override
+    public int archiveOldData(LocalDate beforeDate) {
+        // Trigger backup before archiving
+        LOGGER.info("Triggering automatic backup before archiving old data.");
+        new com.lax.sme_manager.util.BackupService().performBackup();
+
+        // Use explicit column names to avoid mismatch from ALTER TABLE column ordering
+        String insertSql = """
+                INSERT INTO purchase_entries_archive
+                    (id, entry_date, vendor_id, bags, rate, weight_kg, is_lumpsum,
+                     market_fee_percent, commission_percent, market_fee_amount, commission_amount,
+                     base_amount, grand_total, notes, payment_mode, advance_paid, status,
+                     cheque_number, cheque_date, created_by_user, is_deleted, created_at, updated_at,
+                     archived_at)
+                SELECT id, entry_date, vendor_id, bags, rate, weight_kg, is_lumpsum,
+                       market_fee_percent, commission_percent, market_fee_amount, commission_amount,
+                       base_amount, grand_total, notes, payment_mode, advance_paid, status,
+                       cheque_number, cheque_date, created_by_user, is_deleted, created_at, updated_at,
+                       CURRENT_TIMESTAMP
+                FROM purchase_entries
+                WHERE entry_date < ? AND is_deleted = 0
+                """;
+        String deleteSql = "DELETE FROM purchase_entries WHERE entry_date < ? AND is_deleted = 0";
+
+        try (Connection conn = DatabaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+            int movedCount = 0;
+
+            try (PreparedStatement pstmtInsert = conn.prepareStatement(insertSql);
+                    PreparedStatement pstmtDelete = conn.prepareStatement(deleteSql)) {
+
+                pstmtInsert.setObject(1, beforeDate);
+                movedCount = pstmtInsert.executeUpdate();
+
+                if (movedCount > 0) {
+                    pstmtDelete.setObject(1, beforeDate);
+                    pstmtDelete.executeUpdate();
+                }
+
+                conn.commit();
+                return movedCount;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error archiving data: " + e.getMessage());
+            e.printStackTrace();
+            return -1;
+        } finally {
+            // Reclaim space in a separate connection with auto-commit
+            try (Connection vacuumConn = DatabaseManager.getConnection();
+                    Statement stmt = vacuumConn.createStatement()) {
+                stmt.execute("VACUUM");
+            } catch (SQLException e) {
+                System.err.println("Error during VACUUM: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public List<PurchaseEntity> findAllArchived() {
+        String sql = "SELECT * FROM purchase_entries_archive WHERE is_deleted = 0 ORDER BY entry_date DESC";
+        List<PurchaseEntity> list = new java.util.ArrayList<>();
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSetToEntity(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching archived data: " + e.getMessage());
+        }
+        return list;
+    }
+
+    @Override
+    public boolean restoreFromArchive(Integer id) {
+        String insertSql = "INSERT INTO purchase_entries (id, entry_date, vendor_id, bags, rate, weight_kg, is_lumpsum, "
+                +
+                "market_fee_percent, commission_percent, market_fee_amount, commission_amount, base_amount, grand_total, "
+                +
+                "notes, payment_mode, advance_paid, status, cheque_number, cheque_date, created_by_user, is_deleted, " +
+                "created_at, updated_at) " +
+                "SELECT id, entry_date, vendor_id, bags, rate, weight_kg, is_lumpsum, " +
+                "market_fee_percent, commission_percent, market_fee_amount, commission_amount, base_amount, grand_total, "
+                +
+                "notes, payment_mode, advance_paid, status, cheque_number, cheque_date, created_by_user, is_deleted, " +
+                "created_at, updated_at FROM purchase_entries_archive WHERE id = ?";
+        String deleteSql = "DELETE FROM purchase_entries_archive WHERE id = ?";
+
+        try (Connection conn = DatabaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement pstmtInsert = conn.prepareStatement(insertSql);
+                    PreparedStatement pstmtDelete = conn.prepareStatement(deleteSql)) {
+
+                pstmtInsert.setInt(1, id);
+                int inserted = pstmtInsert.executeUpdate();
+
+                if (inserted > 0) {
+                    pstmtDelete.setInt(1, id);
+                    pstmtDelete.executeUpdate();
+                    conn.commit();
+                    return true;
+                }
+                conn.rollback();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error restoring from archive: " + e.getMessage());
+        }
+        return false;
     }
 }

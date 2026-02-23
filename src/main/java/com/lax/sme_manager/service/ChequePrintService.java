@@ -1,7 +1,9 @@
 package com.lax.sme_manager.service;
 
 import com.lax.sme_manager.dto.ChequeData;
+import com.lax.sme_manager.repository.PrintLedgerRepository;
 import com.lax.sme_manager.repository.model.ChequeConfig;
+import com.lax.sme_manager.repository.model.PrintLedgerEntry;
 import com.lax.sme_manager.util.IndianNumberToWords;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -16,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import java.awt.print.PrinterJob;
+import java.io.File;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 
@@ -29,11 +32,11 @@ public class ChequePrintService {
     private static final float CHEQUE_WIDTH_POINTS = 206f * MM_TO_POINTS;
     private static final float CHEQUE_HEIGHT_POINTS = 98f * MM_TO_POINTS;
 
-    public void printSilent(ChequeConfig config, ChequeData data) throws Exception {
-        printBatch(config, java.util.List.of(data));
+    public void printSilent(ChequeConfig config, ChequeData data, Integer userId) throws Exception {
+        printBatch(config, java.util.List.of(data), userId);
     }
 
-    public void printBatch(ChequeConfig config, java.util.List<ChequeData> batchData) throws Exception {
+    public void printBatch(ChequeConfig config, java.util.List<ChequeData> batchData, Integer userId) throws Exception {
         if (batchData == null || batchData.isEmpty())
             return;
 
@@ -66,9 +69,19 @@ public class ChequePrintService {
                 job.setPrintService(defaultService);
                 job.print();
                 LOGGER.info("Batch print job sent for {} cheques", batchData.size());
+
+                // --- ARCHIVE DIGITAL PROOFS ---
+                saveDigitalProofs(document, batchData);
+
+                // --- LOG TO AUDIT LEDGER ---
+                logPrintToLedger(batchData, userId, "SUCCESS", null);
             } else {
+                logPrintToLedger(batchData, userId, "FAILED", "No default printer found.");
                 throw new RuntimeException("No default printer found.");
             }
+        } catch (Exception e) {
+            logPrintToLedger(batchData, userId, "FAILED", e.getMessage());
+            throw e;
         }
     }
 
@@ -246,5 +259,54 @@ public class ChequePrintService {
         float x = (float) ((xMm + config.getOffsetX()) * MM_TO_POINTS);
         float y = CHEQUE_HEIGHT_POINTS - (float) ((yMm + config.getOffsetY()) * MM_TO_POINTS) - heightPoints;
         stream.drawImage(image, x, y, widthPoints, heightPoints);
+    }
+
+    private void saveDigitalProofs(PDDocument document, java.util.List<ChequeData> batchData) {
+        try {
+            File proofsDir = new File("proofs");
+            if (!proofsDir.exists()) {
+                proofsDir.mkdirs();
+            }
+
+            // If it's a batch, we save each page as a separate PDF for easy lookup
+            // Or save the whole document if preferred. Let's save individual ones for
+            // granular search.
+            for (int i = 0; i < batchData.size(); i++) {
+                ChequeData data = batchData.get(i);
+                String safePayee = data.payeeName().replaceAll("[^a-zA-Z0-0]", "_");
+                String dateStr = (data.date() != null ? data.date() : java.time.LocalDate.now())
+                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                String fileName = String.format("proofs/CHQ_%s_%s_%s.pdf",
+                        data.chequeNumber() != null ? data.chequeNumber() : "TEMP",
+                        safePayee,
+                        dateStr);
+
+                try (PDDocument singleDoc = new PDDocument()) {
+                    singleDoc.importPage(document.getPage(i));
+                    singleDoc.save(fileName);
+                }
+            }
+            LOGGER.info("Digital proofs archived successfully in /proofs directory.");
+        } catch (Exception e) {
+            LOGGER.error("Failed to archive digital proofs", e);
+        }
+    }
+
+    private void logPrintToLedger(java.util.List<ChequeData> batchData, Integer userId, String status, String remarks) {
+        try {
+            PrintLedgerRepository ledgerRepo = new PrintLedgerRepository();
+            for (ChequeData data : batchData) {
+                ledgerRepo.logPrint(PrintLedgerEntry.builder()
+                        .userId(userId)
+                        .payeeName(data.payeeName())
+                        .amount(data.amount().doubleValue())
+                        .chequeNumber(data.chequeNumber())
+                        .printStatus(status)
+                        .remarks(remarks)
+                        .build());
+            }
+        } catch (Exception e) {
+            LOGGER.error("Audit Ledger logging failed", e);
+        }
     }
 }

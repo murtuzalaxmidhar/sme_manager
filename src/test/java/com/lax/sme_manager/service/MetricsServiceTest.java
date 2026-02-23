@@ -4,7 +4,9 @@ import com.lax.sme_manager.repository.IPurchaseRepository;
 import com.lax.sme_manager.repository.model.PurchaseEntity;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +23,7 @@ public class MetricsServiceTest {
         fakeRepo.setTotalAmount(50000.0);
         fakeRepo.setPendingCheques(5);
 
-        MetricsService service = new MetricsService(fakeRepo);
+        MetricsService service = new MetricsService(fakeRepo, new FakeTrendRepository());
 
         // Act
         MetricsService.DashboardMetrics metrics = service.getDashboardMetrics();
@@ -57,6 +59,22 @@ public class MetricsServiceTest {
             if (startDate != null && startDate.equals(endDate))
                 return bagsCount;
             return bagsCount + 1; // Week/Month
+        }
+
+        @Override
+        public List<PurchaseEntity> findFilteredPurchases(
+                LocalDate startDate, LocalDate endDate, List<Integer> vendorIds,
+                BigDecimal minAmount, BigDecimal maxAmount, Boolean chequeIssued,
+                String searchQuery, int limit, int offset) {
+            return new ArrayList<>();
+        }
+
+        @Override
+        public int countFilteredPurchases(
+                LocalDate startDate, LocalDate endDate, List<Integer> vendorIds,
+                BigDecimal minAmount, BigDecimal maxAmount, Boolean chequeIssued,
+                String searchQuery) {
+            return 0;
         }
 
         @Override
@@ -134,8 +152,49 @@ public class MetricsServiceTest {
         }
 
         @Override
+        public void updateStatus(Integer id, String status) {
+        }
+
+        @Override
         public int getLastInsertedId() {
             return 0;
+        }
+
+        @Override
+        public Integer countPendingClearing() {
+            return 0;
+        }
+
+        @Override
+        public int archiveOldData(LocalDate beforeDate) {
+            return 0;
+        }
+
+        @Override
+        public java.util.List<PurchaseEntity> findAllArchived() {
+            return java.util.Collections.emptyList();
+        }
+
+        @Override
+        public boolean restoreFromArchive(Integer id) {
+            return false;
+        }
+    }
+
+    static class FakeTrendRepository implements com.lax.sme_manager.repository.ITrendRepository {
+        @Override
+        public java.util.Map<LocalDate, Integer> getWeeklyBagsTrend() {
+            return java.util.Collections.emptyMap();
+        }
+
+        @Override
+        public java.util.Map<String, Integer> getPaymentModeDistribution() {
+            return java.util.Collections.emptyMap();
+        }
+
+        @Override
+        public java.util.Map<String, Integer> getTopVendors(int limit) {
+            return java.util.Collections.emptyMap();
         }
     }
 }

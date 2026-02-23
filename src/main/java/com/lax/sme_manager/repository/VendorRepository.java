@@ -191,6 +191,24 @@ public class VendorRepository {
         }
     }
 
+    /**
+     * Reactivate a soft-deleted vendor
+     */
+    public void reactivate(int id) {
+        String sql = "UPDATE vendors SET is_deleted = 0, updated_at = ? WHERE id = ?";
+
+        try (Connection c = DatabaseManager.getConnection();
+                PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setObject(1, LocalDateTime.now());
+            ps.setInt(2, id);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to reactivate vendor", e);
+        }
+    }
+
     private VendorEntity map(ResultSet rs) throws SQLException {
 
         return VendorEntity.builder()

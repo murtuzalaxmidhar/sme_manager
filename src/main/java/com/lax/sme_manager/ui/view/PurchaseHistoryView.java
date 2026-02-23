@@ -6,7 +6,6 @@ import com.lax.sme_manager.repository.model.PurchaseEntity;
 import com.lax.sme_manager.service.ExportService;
 import com.lax.sme_manager.ui.component.UIStyles;
 import com.lax.sme_manager.ui.theme.LaxTheme;
-import com.lax.sme_manager.util.i18n.AppLabel;
 import com.lax.sme_manager.util.NumericTextFormatter;
 import com.lax.sme_manager.viewmodel.PurchaseHistoryViewModel;
 import javafx.application.Platform;
@@ -15,14 +14,10 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.SVGPath;
-import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import org.slf4j.Logger;
@@ -44,10 +39,13 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
     private Consumer<PurchaseEntity> onPurchaseSelected;
     private Consumer<PurchaseEntity> onPurchaseEdit;
     private TableView<PurchaseEntity> purchaseTable;
+    private com.lax.sme_manager.domain.User currentUser;
 
-    public PurchaseHistoryView(PurchaseHistoryViewModel viewModel, VendorRepository vendorRepository) {
+    public PurchaseHistoryView(PurchaseHistoryViewModel viewModel, VendorRepository vendorRepository,
+            com.lax.sme_manager.domain.User currentUser) {
         this.viewModel = viewModel;
         this.vendorRepository = vendorRepository;
+        this.currentUser = currentUser;
         this.exportService = new ExportService(vendorRepository);
         initializeUI();
         viewModel.loadPurchases();
@@ -84,7 +82,7 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
         HBox bulkActions = new HBox(12);
         bulkActions.setAlignment(Pos.CENTER_LEFT);
 
-        Button btnBatchPrint = new Button("🖨️ Batch Print");
+        Button btnBatchPrint = new Button("➕ Add to Print Queue");
         btnBatchPrint.setStyle(
                 "-fx-background-color: #0D9488; -fx-text-fill: white; -fx-font-weight: 700; -fx-padding: 10 20; -fx-background-radius: 8; -fx-cursor: hand;");
         btnBatchPrint.setOnAction(e -> handleBatchPrint());
@@ -231,7 +229,11 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
         bMonth.setStyle(pStyle);
         bMonth.setOnAction(e -> viewModel.getFilterState().applyPresetLastMonth());
 
-        presetsGrp.getChildren().addAll(bToday, bYesterday, bMonth);
+        Button bAllTime = new Button("All Time");
+        bAllTime.setStyle(pStyle);
+        bAllTime.setOnAction(e -> viewModel.getFilterState().applyPresetAllTime());
+
+        presetsGrp.getChildren().addAll(bToday, bYesterday, bMonth, bAllTime);
 
         Region row1Spacer = new Region();
         HBox.setHgrow(row1Spacer, Priority.ALWAYS);
@@ -360,6 +362,7 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
         return card;
     }
 
+    @SuppressWarnings("unchecked")
     private TableView<PurchaseEntity> createTable() {
         TableView<PurchaseEntity> table = new TableView<>();
         table.setItems(viewModel.purchaseList);
@@ -448,6 +451,11 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
             }
         });
 
+        TableColumn<PurchaseEntity, String> userCol = new TableColumn<>("Captured By");
+        userCol.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(
+                d.getValue().getCreatedByUser() != null ? d.getValue().getCreatedByUser().toUpperCase() : "-"));
+        userCol.setPrefWidth(100);
+
         // Actions with Crisp SVG Icons
         TableColumn<PurchaseEntity, Void> actionCol = new TableColumn<>("Actions");
         actionCol.setCellFactory(cf -> new ActionButtonsTableCell(
@@ -460,35 +468,13 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
                         onPurchaseEdit.accept(p);
                 },
                 this::handlePrintCheque,
-                this::handleDelete));
+                this::handleDelete,
+                viewModel::markAsCleared));
         actionCol.setMinWidth(180);
 
         table.getColumns().addAll(selectCol, dateCol, vendorCol, bagsCol, rateCol, amountCol, chequeCol, statusCol,
-                actionCol);
+                userCol, actionCol);
         return table;
-    }
-
-    private Button createSvgButton(String svgPath, String colorHex, String tooltip) {
-        SVGPath path = new SVGPath();
-        path.setContent(svgPath);
-        path.setFill(Color.web(colorHex));
-        path.setScaleX(1.1); // Slightly larger
-        path.setScaleY(1.1);
-
-        Button btn = new Button();
-        btn.setGraphic(path);
-        btn.setTooltip(new Tooltip(tooltip));
-        btn.getStyleClass().add("button");
-        btn.getStyleClass().add("icon-only"); // New class from theme.css
-        // Override default button padding for icons
-        btn.setStyle("-fx-padding: 6; -fx-background-color: transparent; -fx-cursor: hand;");
-
-        // Add hover effect manually to ensure visibility
-        btn.setOnMouseEntered(e -> btn.setStyle(
-                "-fx-padding: 6; -fx-background-color: rgba(0,0,0,0.05); -fx-background-radius: 50%; -fx-cursor: hand;"));
-        btn.setOnMouseExited(e -> btn.setStyle("-fx-padding: 6; -fx-background-color: transparent; -fx-cursor: hand;"));
-
-        return btn;
     }
 
     private void handlePrintCheque(PurchaseEntity p) {
@@ -497,7 +483,8 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
                 vendorName, p.getGrandTotal(), p.getChequeDate() != null ? p.getChequeDate() : LocalDate.now(), true,
                 p.getId(), null);
         // Pass refresh callback so table updates immediately after successful print
-        new ChequePreviewDialog(data, () -> viewModel.loadPurchases()).show();
+        new ChequePreviewDialog(data, () -> viewModel.loadPurchases(), currentUser != null ? currentUser.getId() : null)
+                .show();
     }
 
     private void handleBatchPrint() {
@@ -505,26 +492,17 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
         if (selected.isEmpty())
             return;
 
-        com.lax.sme_manager.repository.ChequeBookRepository bookRepo = new com.lax.sme_manager.repository.ChequeBookRepository();
-        com.lax.sme_manager.repository.model.ChequeBook activeBook = bookRepo.getActiveBook();
-        if (activeBook == null || activeBook.isExhausted()) {
-            AlertUtils.showError("Cheque Book Exhausted",
-                    "No active cheque book available with remaining leaves.\nPlease change the cheque book or select another book in Settings before printing.");
-            return;
-        }
-
-        // Filter out already-PAID cheques
         List<PurchaseEntity> unpaid = selected.stream()
-                .filter(p -> !"PAID".equalsIgnoreCase(p.getStatus()))
+                .filter(p -> !"PAID".equalsIgnoreCase(p.getStatus()) && !"CLEARED".equalsIgnoreCase(p.getStatus()))
                 .toList();
 
         if (unpaid.isEmpty()) {
-            AlertUtils.showWarning("Warning", "All selected cheques are already PAID. Nothing to print.");
+            AlertUtils.showWarning("Warning", "All selected cheques are already PAID or CLEARED. Nothing to queue.");
             return;
         }
 
         int skipped = selected.size() - unpaid.size();
-        String msg = "Print " + unpaid.size() + " cheque(s)?";
+        String msg = "Add " + unpaid.size() + " cheque(s) to the print queue?";
         if (skipped > 0) {
             msg += "\n(" + skipped + " already-PAID cheque(s) will be skipped.)";
         }
@@ -533,175 +511,10 @@ public class PurchaseHistoryView extends VBox implements RefreshableView {
         AlertUtils.styleDialog(alert);
         alert.showAndWait().ifPresent(r -> {
             if (r == ButtonType.YES) {
-                processBatchWithBooks(unpaid);
+                viewModel.addToPrintQueue(unpaid);
+                viewModel.selectedPurchases.clear();
             }
         });
-    }
-
-    private void processBatchWithBooks(List<PurchaseEntity> pendingPurchases) {
-        if (pendingPurchases.isEmpty())
-            return;
-
-        com.lax.sme_manager.repository.ChequeBookRepository bookRepo = new com.lax.sme_manager.repository.ChequeBookRepository();
-        com.lax.sme_manager.repository.model.ChequeBook activeBook = bookRepo.getActiveBook();
-
-        if (activeBook == null || activeBook.isExhausted()) {
-            AlertUtils.showError("No Active Book",
-                    "No active cheque book available with remaining leaves. Please select a new active book in settings or add a new one.");
-            return;
-        }
-
-        long remainingLeaves = activeBook.getRemainingLeaves();
-        List<PurchaseEntity> currentBatch;
-        List<PurchaseEntity> nextBatch = new java.util.ArrayList<>();
-
-        if (pendingPurchases.size() <= remainingLeaves) {
-            currentBatch = pendingPurchases;
-        } else {
-            currentBatch = pendingPurchases.subList(0, (int) remainingLeaves);
-            nextBatch = pendingPurchases.subList((int) remainingLeaves, pendingPurchases.size());
-
-            Alert warn = AlertUtils.createStyledAlert(Alert.AlertType.WARNING, "Book Exhaustion Warning",
-                    "The active cheque book ('" + activeBook.getBookName() + "') only has " + remainingLeaves
-                            + " leaves left.\n\n" +
-                            "The system will print the first " + remainingLeaves
-                            + " cheques now. You will then be prompted to select a new book for the remaining "
-                            + nextBatch.size() + " cheques.");
-            warn.showAndWait();
-        }
-
-        // Reserve the leaves
-        long startChqNum = bookRepo.consumeLeaves(activeBook.getId(), currentBatch.size());
-        if (startChqNum == -1) {
-            AlertUtils.showError("Error", "Failed to reserve leaves from book.");
-            return;
-        }
-
-        var printService = new com.lax.sme_manager.service.ChequePrintService();
-        var config = new com.lax.sme_manager.repository.ChequeConfigRepository().getConfig();
-        int count = 0;
-        int duplicates = 0;
-
-        java.util.List<com.lax.sme_manager.dto.ChequeData> batchDataList = new java.util.ArrayList<>();
-        java.util.List<PurchaseEntity> successList = new java.util.ArrayList<>();
-
-        long chqNum = startChqNum;
-
-        for (PurchaseEntity p : currentBatch) {
-            String currentChqNo = String.format("%06d", chqNum);
-
-            // Fraud check for each cheque number
-            if (isBatchChequeNumberDuplicate(currentChqNo)) {
-                duplicates++;
-                chqNum++;
-                continue;
-            }
-
-            String vName = getVendorName(p.getVendorId());
-            var data = new com.lax.sme_manager.dto.ChequeData(vName, p.getGrandTotal(),
-                    p.getChequeDate() != null ? p.getChequeDate() : LocalDate.now(), true, p.getId(),
-                    currentChqNo);
-
-            batchDataList.add(data);
-            successList.add(p);
-
-            p.setChequeNumber(currentChqNo); // Temporarily store for marking PAID
-            chqNum++;
-        }
-
-        // EXECUTE HIGH-PERFORMANCE BATCH PRINT
-        if (!batchDataList.isEmpty()) {
-            try {
-                printService.printBatch(config, batchDataList);
-
-                // If print succeeded (no exception), mark all as PAID
-                for (PurchaseEntity p : successList) {
-                    markBatchPurchaseAsPaid(p.getId(), p.getChequeNumber());
-                    count++;
-                }
-            } catch (Exception e) {
-                LOGGER.error("Batch print failed", e);
-                AlertUtils.showError("Error", "Printing failed: " + e.getMessage());
-            }
-        }
-
-        String result = "Sent " + count + " cheque(s) to printer and marked as PAID.";
-        if (duplicates > 0) {
-            result += "\n⚠️ " + duplicates + " duplicate cheque number(s) were skipped.";
-        }
-        AlertUtils.showInfo("Information", result);
-
-        // Refresh the table immediately
-        viewModel.loadPurchases();
-        viewModel.selectedPurchases.clear();
-
-        // Check if we have more to print
-        if (!nextBatch.isEmpty()) {
-            final java.util.List<PurchaseEntity> remaining = nextBatch;
-            javafx.application.Platform.runLater(() -> promptForNextBookAndContinue(remaining));
-        }
-    }
-
-    private void promptForNextBookAndContinue(List<PurchaseEntity> remainingPurchases) {
-        com.lax.sme_manager.repository.ChequeBookRepository bookRepo = new com.lax.sme_manager.repository.ChequeBookRepository();
-        java.util.List<com.lax.sme_manager.repository.model.ChequeBook> availableBooks = bookRepo.getAllBooks().stream()
-                .filter(b -> !b.isExhausted())
-                .toList();
-
-        if (availableBooks.isEmpty()) {
-            AlertUtils.showError("Error",
-                    "No more available cheque books to continue printing. Please add a new book in Settings.");
-            return;
-        }
-
-        java.util.Map<String, com.lax.sme_manager.repository.model.ChequeBook> bookMap = new java.util.HashMap<>();
-        java.util.List<String> bookNames = new java.util.ArrayList<>();
-        for (com.lax.sme_manager.repository.model.ChequeBook b : availableBooks) {
-            String key = b.getBookName() + " (" + b.getRemainingLeaves() + " left)";
-            bookMap.put(key, b);
-            bookNames.add(key);
-        }
-
-        ChoiceDialog<String> stringDialog = new ChoiceDialog<>(bookNames.get(0), bookNames);
-        stringDialog.setTitle("Select Next Cheque Book");
-        stringDialog.setHeaderText("The previous book was exhausted.");
-        stringDialog.setContentText("Select a book to continue printing " + remainingPurchases.size() + " cheques:");
-        AlertUtils.styleDialog(stringDialog);
-
-        stringDialog.showAndWait().ifPresent(choice -> {
-            com.lax.sme_manager.repository.model.ChequeBook selected = bookMap.get(choice);
-            bookRepo.activateHook(selected.getId()); // Set as active
-            processBatchWithBooks(remainingPurchases); // Continue the loop
-        });
-    }
-
-    /** Fraud check for batch printing */
-    private boolean isBatchChequeNumberDuplicate(String chqNo) {
-        String sql = "SELECT COUNT(*) FROM purchase_entries WHERE cheque_number = ?";
-        try (var conn = com.lax.sme_manager.util.DatabaseManager.getConnection();
-                var stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, chqNo);
-            var rs = stmt.executeQuery();
-            if (rs.next())
-                return rs.getInt(1) > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    /** Mark a single purchase as PAID during batch printing */
-    private void markBatchPurchaseAsPaid(int purchaseId, String chqNo) {
-        String sql = "UPDATE purchase_entries SET status = 'PAID', cheque_number = ?, cheque_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        try (var conn = com.lax.sme_manager.util.DatabaseManager.getConnection();
-                var stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, chqNo);
-            stmt.setObject(2, LocalDate.now());
-            stmt.setInt(3, purchaseId);
-            stmt.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private void handleBulkDelete() {

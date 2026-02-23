@@ -3,10 +3,6 @@ package com.lax.sme_manager.ui.component;
 import com.lax.sme_manager.ui.LaxSmeManagerApp;
 
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.stage.StageStyle;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import java.util.Optional;
 
 /**

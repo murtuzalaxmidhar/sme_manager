@@ -89,4 +89,39 @@ public interface IPurchaseRepository {
      * Restore a soft-deleted purchase
      */
     void restore(Integer id);
+
+    void updateStatus(Integer id, String status);
+
+    Integer countPendingClearing();
+
+    /**
+     * Archive purchases older than the specified date
+     */
+    int archiveOldData(LocalDate beforeDate);
+
+    /**
+     * Retrieve all archived records
+     */
+    List<PurchaseEntity> findAllArchived();
+
+    /**
+     * Restore a record from archive to active table
+     */
+    boolean restoreFromArchive(Integer id);
+
+    /**
+     * Fetch purchases with database-level filtering and pagination
+     */
+    List<PurchaseEntity> findFilteredPurchases(
+            LocalDate startDate, LocalDate endDate, List<Integer> vendorIds,
+            java.math.BigDecimal minAmount, java.math.BigDecimal maxAmount, Boolean chequeIssued,
+            String searchQuery, int limit, int offset);
+
+    /**
+     * Get total count of filtered purchases
+     */
+    int countFilteredPurchases(
+            LocalDate startDate, LocalDate endDate, List<Integer> vendorIds,
+            java.math.BigDecimal minAmount, java.math.BigDecimal maxAmount, Boolean chequeIssued,
+            String searchQuery);
 }
