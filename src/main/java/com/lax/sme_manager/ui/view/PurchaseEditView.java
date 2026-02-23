@@ -1,9 +1,6 @@
 package com.lax.sme_manager.ui.view;
 
-import com.lax.sme_manager.domain.Vendor;
 import com.lax.sme_manager.repository.model.PurchaseEntity;
-import com.lax.sme_manager.ui.component.UIComponents;
-import com.lax.sme_manager.ui.component.UIStyles;
 import com.lax.sme_manager.ui.theme.LaxTheme;
 import com.lax.sme_manager.util.i18n.AppLabel;
 import com.lax.sme_manager.util.VendorCache;
@@ -26,9 +23,10 @@ public class PurchaseEditView extends ScrollPane {
     private Runnable onSave;
     private Runnable onCancel;
 
-    public PurchaseEditView(PurchaseEntity entity, VendorCache vendorCache) {
+    public PurchaseEditView(PurchaseEntity entity, VendorCache vendorCache,
+            com.lax.sme_manager.domain.User currentUser) {
         this.originalEntity = entity;
-        this.viewModel = new PurchaseEntryViewModel(vendorCache);
+        this.viewModel = new PurchaseEntryViewModel(vendorCache, currentUser);
         this.viewModel.setPurchaseData(entity);
         initializeUI();
     }

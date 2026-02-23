@@ -49,8 +49,9 @@ public class RecycleBinViewModel {
     }
 
     public void restorePurchase(PurchaseEntity p) {
-        if (p == null) return;
-        
+        if (p == null)
+            return;
+
         CompletableFuture.runAsync(() -> {
             purchaseRepository.restore(p.getId());
         }).thenRun(() -> Platform.runLater(() -> {

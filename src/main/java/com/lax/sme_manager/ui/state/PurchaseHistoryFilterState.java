@@ -13,7 +13,7 @@ import java.time.LocalDate;
 public class PurchaseHistoryFilterState {
 
     // Date filters
-    public final ObjectProperty<LocalDate> filterStartDate = new SimpleObjectProperty<>(LocalDate.now().minusMonths(1));
+    public final ObjectProperty<LocalDate> filterStartDate = new SimpleObjectProperty<>(LocalDate.now().minusMonths(6));
     public final ObjectProperty<LocalDate> filterEndDate = new SimpleObjectProperty<>(LocalDate.now());
     public final StringProperty searchQuery = new SimpleStringProperty("");
 
@@ -32,7 +32,7 @@ public class PurchaseHistoryFilterState {
     public final IntegerProperty totalPages = new SimpleIntegerProperty(0);
 
     public void resetFilters() {
-        filterStartDate.set(LocalDate.now().minusMonths(1));
+        filterStartDate.set(LocalDate.now().minusMonths(6));
         filterEndDate.set(LocalDate.now());
         filterVendorIds.clear();
         filterMinAmount.set(BigDecimal.ZERO);
@@ -59,6 +59,12 @@ public class PurchaseHistoryFilterState {
     public void applyPresetLast7Days() {
         filterStartDate.set(LocalDate.now().minusDays(7));
         filterEndDate.set(LocalDate.now());
+        currentPage.set(0);
+    }
+
+    public void applyPresetAllTime() {
+        filterStartDate.set(null);
+        filterEndDate.set(null);
         currentPage.set(0);
     }
 

@@ -99,6 +99,36 @@ public class ChequeConfigRepository {
         }
     }
 
+    public ChequeConfig getConfigByBank(String bankName) {
+        String sql = "SELECT * FROM bank_templates WHERE bank_name = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, bankName);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return ChequeConfig.builder()
+                        .bankName(rs.getString("bank_name"))
+                        .payeeX(rs.getDouble("payee_x"))
+                        .payeeY(rs.getDouble("payee_y"))
+                        .amountWordsX(rs.getDouble("amount_words_x"))
+                        .amountWordsY(rs.getDouble("amount_words_y"))
+                        .amountDigitsX(rs.getDouble("amount_digits_x"))
+                        .amountDigitsY(rs.getDouble("amount_digits_y"))
+                        .dateX(rs.getDouble("date_x"))
+                        .dateY(rs.getDouble("date_y"))
+                        .signatureX(rs.getDouble("signature_x"))
+                        .signatureY(rs.getDouble("signature_y"))
+                        .fontSize(rs.getInt("font_size"))
+                        .isAcPayee(rs.getBoolean("is_ac_payee"))
+                        .datePositions(rs.getString("date_positions"))
+                        .build();
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error fetching bank config for: " + bankName, e);
+        }
+        return getConfig(); // Fallback to current config
+    }
+
     private void insertDefaultConfig(ChequeConfig config) {
         String sql = """
                 INSERT INTO cheque_config (

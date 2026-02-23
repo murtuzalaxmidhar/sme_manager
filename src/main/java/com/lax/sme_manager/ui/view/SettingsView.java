@@ -7,6 +7,8 @@ import com.lax.sme_manager.ui.component.AlertUtils;
 import com.lax.sme_manager.repository.model.ChequeConfig;
 import com.lax.sme_manager.ui.component.UIStyles;
 import com.lax.sme_manager.ui.theme.LaxTheme;
+import com.lax.sme_manager.domain.User;
+import com.lax.sme_manager.repository.UserRepository;
 import com.lax.sme_manager.util.ImageUtils;
 import com.lax.sme_manager.util.BackupService;
 import com.lax.sme_manager.util.PasswordManager;
@@ -28,8 +30,11 @@ public class SettingsView extends VBox {
     private final ImageView previewView = new ImageView();
     private SignatureConfig activeConfig;
     private ChequeConfig chequeConfig;
+    private final User currentUser;
+    private final UserRepository userRepo = new UserRepository();
 
-    public SettingsView() {
+    public SettingsView(User currentUser) {
+        this.currentUser = currentUser;
         this.chequeConfig = configRepo.getConfig();
         if (this.chequeConfig == null)
             this.chequeConfig = new ChequeConfig();
@@ -44,6 +49,12 @@ public class SettingsView extends VBox {
 
         Label titleLabel = new Label("⚙️ Settings");
         titleLabel.setStyle(UIStyles.getTitleStyle());
+        // getChildren().add(titleLabel); // Removed duplicate add, combined at the end
+
+        // Create all sections
+        VBox profileSection = createUserProfileSection();
+        VBox userManagementSection = (currentUser.isAdmin()) ? createUserManagementSection() : null;
+        VBox maintenanceSection = (currentUser.isAdmin()) ? createMaintenanceSection() : null;
 
         // --- 1. GENERAL SETTINGS (Restored Language) ---
         VBox generalSection = createSection("🔧 General & Localization");
@@ -422,7 +433,16 @@ public class SettingsView extends VBox {
 
         securitySection.getChildren().addAll(passwordsContainer, sep, secQuestionBox);
 
-        getChildren().addAll(titleLabel, generalSection, chequeSection, sigSection, securitySection);
+        // Add everything in order
+        getChildren().add(titleLabel);
+        getChildren().add(profileSection);
+        if (userManagementSection != null) {
+            getChildren().add(userManagementSection);
+        }
+        if (maintenanceSection != null) {
+            getChildren().add(maintenanceSection);
+        }
+        getChildren().addAll(generalSection, chequeSection, sigSection, securitySection);
     }
 
     private void loadSignatures() {
@@ -527,6 +547,142 @@ public class SettingsView extends VBox {
         }
     }
 
+    private VBox createUserProfileSection() {
+        VBox profileSection = createSection("👤 My Profile (" + currentUser.getUsername() + ")");
+        GridPane profileGrid = new GridPane();
+        profileGrid.setHgap(20);
+        profileGrid.setVgap(15);
+
+        Label lblCurrent = new Label("Username:");
+        Label valCurrent = new Label(currentUser.getUsername());
+        valCurrent.setStyle("-fx-font-weight: bold;");
+
+        Label lblRole = new Label("My Role:");
+        Label valRole = new Label(currentUser.getRole().name());
+        valRole.setStyle(
+                "-fx-font-weight: bold; -fx-text-fill: " + (currentUser.isAdmin() ? "#ef4444" : "#0d9488") + ";");
+
+        PasswordField newPass = new PasswordField();
+        newPass.setPromptText("New Password");
+        newPass.setStyle(LaxTheme.getInputStyle());
+
+        Button btnUpdate = new Button("Update Password");
+        btnUpdate.setStyle(LaxTheme.getButtonStyle(LaxTheme.ButtonType.SECONDARY));
+        btnUpdate.setOnAction(e -> {
+            String pw = newPass.getText().trim();
+            if (pw.isEmpty()) {
+                AlertUtils.showWarning("Error", "Password cannot be empty.");
+                return;
+            }
+            if (userRepo.updatePassword(currentUser.getId(), pw)) {
+                AlertUtils.showInfo("Success", "Password updated successfully.");
+                newPass.clear();
+            } else {
+                AlertUtils.showError("Error", "Failed to update password.");
+            }
+        });
+
+        profileGrid.add(lblCurrent, 0, 0);
+        profileGrid.add(valCurrent, 1, 0);
+        profileGrid.add(lblRole, 0, 1);
+        profileGrid.add(valRole, 1, 1);
+        profileGrid.add(new Label("Change Password:"), 0, 2);
+        profileGrid.add(newPass, 1, 2);
+        profileGrid.add(btnUpdate, 1, 3);
+
+        profileSection.getChildren().add(profileGrid);
+        return profileSection;
+    }
+
+    private VBox createUserManagementSection() {
+        VBox userSection = createSection("👥 User Management (Admin Only)");
+        userSection.setSpacing(15);
+
+        // -- Create User Form --
+        HBox createForm = new HBox(10);
+        createForm.setAlignment(Pos.CENTER_LEFT);
+
+        TextField uName = new TextField();
+        uName.setPromptText("Operator Username");
+        uName.setStyle(LaxTheme.getInputStyle());
+
+        PasswordField uPass = new PasswordField();
+        uPass.setPromptText("Initial Password");
+        uPass.setStyle(LaxTheme.getInputStyle());
+
+        Button btnAdd = new Button("➕ Add Operator");
+        btnAdd.setStyle(LaxTheme.getButtonStyle(LaxTheme.ButtonType.PRIMARY));
+
+        VBox listContainer = new VBox(5);
+        listContainer.setStyle(
+                "-fx-background-color: #f8fafc; -fx-padding: 10; -fx-background-radius: 8; -fx-border-color: #e2e8f0;");
+
+        Runnable refreshList = () -> {
+            listContainer.getChildren().clear();
+            List<User> users = userRepo.getAllUsers();
+            for (User u : users) {
+                HBox row = new HBox(15);
+                row.setAlignment(Pos.CENTER_LEFT);
+                row.setPadding(new Insets(5, 0, 5, 0));
+
+                Label name = new Label(u.getUsername());
+                name.setPrefWidth(150);
+                name.setStyle("-fx-font-weight: bold;");
+
+                Label role = new Label(u.getRole().name());
+                role.setPrefWidth(80);
+                role.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b;");
+
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                Button btnDel = new Button("🗑️");
+                btnDel.setStyle("-fx-background-color: transparent; -fx-text-fill: #ef4444; -fx-cursor: hand;");
+                if (u.getUsername().equalsIgnoreCase("admin") || u.getId().equals(currentUser.getId())) {
+                    btnDel.setDisable(true);
+                }
+
+                btnDel.setOnAction(e -> {
+                    if (AlertUtils.showConfirmation("Delete User",
+                            "Are you sure you want to delete user: " + u.getUsername() + "?")) {
+                        if (userRepo.deleteUser(u.getId())) {
+                            AlertUtils.showInfo("Success", "User deleted.");
+                            // Need to refresh locally
+                            listContainer.getChildren().remove(row);
+                        }
+                    }
+                });
+
+                row.getChildren().addAll(name, role, spacer, btnDel);
+                listContainer.getChildren().add(row);
+            }
+        };
+
+        btnAdd.setOnAction(e -> {
+            String name = uName.getText().trim();
+            String pass = uPass.getText().trim();
+            if (name.isEmpty() || pass.isEmpty()) {
+                AlertUtils.showWarning("Error", "Username and Password are required.");
+                return;
+            }
+            if (userRepo.createUser(name, pass, User.Role.OPERATOR)) {
+                AlertUtils.showInfo("Success", "Operator account created.");
+                uName.clear();
+                uPass.clear();
+                refreshList.run();
+            } else {
+                AlertUtils.showError("Error", "Failed to create user (Username might already exist).");
+            }
+        });
+
+        createForm.getChildren().addAll(uName, uPass, btnAdd);
+        userSection.getChildren().addAll(new Label("Add New Operator Account:"), createForm, new Separator(),
+                new Label("Existing User Accounts:"), listContainer);
+
+        refreshList.run();
+        return userSection;
+    }
+
     private VBox createSection(String title) {
         VBox box = new VBox(15);
         box.setStyle(UIStyles.getCardStyle());
@@ -535,5 +691,148 @@ public class SettingsView extends VBox {
         lbl.setStyle("-fx-font-weight: bold; -fx-font-size: 15px; -fx-text-fill: #334155;");
         box.getChildren().add(lbl);
         return box;
+    }
+
+    private VBox createMaintenanceSection() {
+        VBox maintenanceSection = createSection("🧹 Database Health & Maintenance (Admin Only)");
+        maintenanceSection.setSpacing(15);
+
+        Label desc = new Label("Optimizing your database keeps the application running at peak performance.");
+        desc.setStyle("-fx-font-size: 13px; -fx-text-fill: #64748b;");
+
+        HBox statsBox = new HBox(30);
+        statsBox.setPadding(new Insets(10));
+        statsBox.setStyle("-fx-background-color: #f1f5f9; -fx-background-radius: 8;");
+
+        VBox dbSizeBox = new VBox(5);
+        Label dbSizeTitle = new Label("Current DB Size");
+        dbSizeTitle.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b;");
+        Label dbSizeVal = new Label("Calculating...");
+        dbSizeVal.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+
+        VBox archiveBox = new VBox(5);
+        Label archiveTitle = new Label("Archived Records");
+        archiveTitle.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b;");
+        Label archiveVal = new Label("Calculating...");
+        archiveVal.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+
+        statsBox.getChildren().addAll(dbSizeBox, archiveBox);
+        dbSizeBox.getChildren().addAll(dbSizeTitle, dbSizeVal);
+        archiveBox.getChildren().addAll(archiveTitle, archiveVal);
+
+        // Update stats
+        File dbFile = com.lax.sme_manager.util.DatabaseManager.getDatabaseFile();
+        if (dbFile.exists()) {
+            double sizeMb = dbFile.length() / (1024.0 * 1024.0);
+            dbSizeVal.setText(String.format("%.2f MB", sizeMb));
+        }
+
+        try (java.sql.Connection conn = com.lax.sme_manager.util.DatabaseManager.getConnection();
+                java.sql.Statement stmt = conn.createStatement();
+                java.sql.ResultSet rs = stmt.executeQuery("SELECT count(*) FROM purchase_entries_archive")) {
+            if (rs.next()) {
+                archiveVal.setText(String.valueOf(rs.getInt(1)));
+            }
+        } catch (java.sql.SQLException e) {
+            archiveVal.setText("0");
+        }
+
+        // --- BACKUP CLEANUP ---
+        VBox backupBox = new VBox(10);
+        Label backupSub = new Label("Backup Cleanup: Automatically retain only the last 30 days.");
+        backupSub.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+        Button btnCleanup = new Button("🧹 Clean Up Now");
+        btnCleanup.setStyle(LaxTheme.getButtonStyle(LaxTheme.ButtonType.SECONDARY));
+        btnCleanup.setOnAction(e -> {
+            new BackupService().performBackup(); // performBackup calls cleanup
+            AlertUtils.showInfo("Maintenance", "Old backups (older than 30 days) have been removed.");
+        });
+        backupBox.getChildren().addAll(backupSub, btnCleanup);
+
+        // --- DATA ARCHIVING ---
+        VBox archivingBox = new VBox(10);
+        Label archiveSub = new Label("Data Archiving: Move records older than a specific date to archive.");
+        archiveSub.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+
+        HBox archiveControls = new HBox(15);
+        archiveControls.setAlignment(Pos.CENTER_LEFT);
+        DatePicker archiveBefore = new DatePicker(
+                java.time.LocalDate.now().minusYears(1).withMonth(1).withDayOfMonth(1));
+        Button btnArchive = new Button("📦 Archive Old Data");
+        btnArchive.setStyle(LaxTheme.getButtonStyle(LaxTheme.ButtonType.PRIMARY));
+
+        btnArchive.setOnAction(e -> {
+            java.time.LocalDate date = archiveBefore.getValue();
+            if (date == null)
+                return;
+
+            if (AlertUtils.showConfirmation("Confirm Archiving",
+                    "Are you sure you want to archive all data older than " + date + "?\n" +
+                            "Archived data will be moved to a separate table for performance.")) {
+
+                com.lax.sme_manager.repository.PurchaseRepository repo = new com.lax.sme_manager.repository.PurchaseRepository();
+                int moved = repo.archiveOldData(date);
+                if (moved >= 0) {
+                    AlertUtils.showInfo("Archiving Complete", moved + " records moved to archive.");
+                    // Refresh stats
+                    try (java.sql.Connection conn = com.lax.sme_manager.util.DatabaseManager.getConnection();
+                            java.sql.Statement stmt = conn.createStatement();
+                            java.sql.ResultSet rs = stmt
+                                    .executeQuery("SELECT count(*) FROM purchase_entries_archive")) {
+                        if (rs.next())
+                            archiveVal.setText(String.valueOf(rs.getInt(1)));
+                    } catch (Exception ignored) {
+                    }
+                } else {
+                    AlertUtils.showError("Archiving Failed", "An error occurred during archiving. Check logs.");
+                }
+            }
+        });
+
+        archiveControls.getChildren().addAll(new Label("Archive data before:"), archiveBefore, btnArchive);
+        archivingBox.getChildren().addAll(archiveSub, archiveControls);
+
+        // --- BROWSE ARCHIVE ---
+        VBox browseBox = new VBox(10);
+        Label browseSub = new Label("Archive Explorer: Browse and search all your cold storage data.");
+        browseSub.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+        Button btnBrowse = new Button("🔎 Browse Archive");
+        btnBrowse.setStyle(LaxTheme.getButtonStyle(LaxTheme.ButtonType.SECONDARY));
+        btnBrowse.setOnAction(e -> {
+            Dialog<Void> dialog = new Dialog<>();
+            dialog.setTitle("Archive Explorer");
+            dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+            dialog.getDialogPane().setContent(new ArchiveExplorerView());
+            dialog.getDialogPane().setPrefSize(900, 600);
+            dialog.setResizable(true);
+            AlertUtils.styleDialog(dialog);
+            dialog.showAndWait();
+
+            // Refresh stats after potential restoration
+            updateMaintenanceStats(dbSizeVal, archiveVal);
+        });
+        browseBox.getChildren().addAll(browseSub, btnBrowse);
+
+        maintenanceSection.getChildren().addAll(desc, statsBox, new Separator(), backupBox, new Separator(),
+                archivingBox, new Separator(), browseBox);
+        return maintenanceSection;
+    }
+
+    private void updateMaintenanceStats(Label dbSize, Label archive) {
+        File dbFile = com.lax.sme_manager.util.DatabaseManager.getDatabaseFile();
+        if (dbFile.exists()) {
+            double sizeMb = dbFile.length() / (1024.0 * 1024.0);
+            dbSize.setText(String.format("%.2f MB", sizeMb));
+        }
+
+        try (java.sql.Connection conn = com.lax.sme_manager.util.DatabaseManager.getConnection();
+                java.sql.Statement stmt = conn.createStatement();
+                java.sql.ResultSet rs = stmt.executeQuery("SELECT count(*) FROM purchase_entries_archive")) {
+            if (rs.next()) {
+                archive.setText(String.valueOf(rs.getInt(1)));
+            }
+        } catch (java.sql.SQLException e) {
+            archive.setText("0");
+        }
     }
 }
