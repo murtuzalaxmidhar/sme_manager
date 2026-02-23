@@ -18,9 +18,12 @@ import java.util.concurrent.CompletableFuture;
 public class MetricsService {
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricsService.class);
     private final IPurchaseRepository purchaseRepository;
+    private final com.lax.sme_manager.repository.ITrendRepository trendRepository;
 
-    public MetricsService(IPurchaseRepository purchaseRepository) {
+    public MetricsService(IPurchaseRepository purchaseRepository,
+            com.lax.sme_manager.repository.ITrendRepository trendRepository) {
         this.purchaseRepository = purchaseRepository;
+        this.trendRepository = trendRepository;
     }
 
     @Data
@@ -33,6 +36,12 @@ public class MetricsService {
         private int unpaidChequesTotal;
         private double avgRateThisMonth;
         private int chequesClearingToday;
+        private int pendingClearingTotal;
+
+        // Chart Data
+        private java.util.Map<java.time.LocalDate, Integer> weeklyBagsTrend;
+        private java.util.Map<String, Integer> paymentDistribution;
+        private java.util.Map<String, Integer> topVendors;
     }
 
     /**
@@ -74,6 +83,9 @@ public class MetricsService {
         // 5. Cheques Clearing Today (using cheque_date)
         int clearingToday = purchaseRepository.countChequesByClearingDate(today);
 
+        // 6. Pending Clearing (Total PAID but not yet CLEARED)
+        int pendingClearing = purchaseRepository.countPendingClearing();
+
         return DashboardMetrics.builder()
                 .bagsToday(bagsToday)
                 .bagsThisWeek(bagsWeek)
@@ -82,6 +94,10 @@ public class MetricsService {
                 .unpaidChequesTotal(unpaidCheques)
                 .avgRateThisMonth(avgRate)
                 .chequesClearingToday(clearingToday)
+                .pendingClearingTotal(pendingClearing)
+                .weeklyBagsTrend(trendRepository.getWeeklyBagsTrend())
+                .paymentDistribution(trendRepository.getPaymentModeDistribution())
+                .topVendors(trendRepository.getTopVendors(5))
                 .build();
     }
 }

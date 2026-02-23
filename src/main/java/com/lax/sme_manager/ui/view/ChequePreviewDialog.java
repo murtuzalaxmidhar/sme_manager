@@ -42,6 +42,7 @@ public class ChequePreviewDialog extends Dialog<Void> {
     private final ChequeConfigRepository configRepo;
     private final ChequePrintService printService;
     private final com.lax.sme_manager.repository.ChequeBookRepository bookRepo;
+    private final Integer userId;
 
     // Use current saved config
     private ChequeConfig config;
@@ -66,12 +67,13 @@ public class ChequePreviewDialog extends Dialog<Void> {
     private static final double PREVIEW_HEIGHT_PX = ACTUAL_HEIGHT_MM * MM_TO_PX;
 
     public ChequePreviewDialog(ChequeData chequeData) {
-        this(chequeData, null);
+        this(chequeData, null, null);
     }
 
-    public ChequePreviewDialog(ChequeData chequeData, Runnable onPrintComplete) {
+    public ChequePreviewDialog(ChequeData chequeData, Runnable onPrintComplete, Integer userId) {
         this.chequeData = chequeData;
         this.onPrintComplete = onPrintComplete;
+        this.userId = userId;
         this.configRepo = new ChequeConfigRepository();
         this.sigRepo = new com.lax.sme_manager.repository.SignatureRepository();
         this.printService = new ChequePrintService();
@@ -397,7 +399,7 @@ public class ChequePreviewDialog extends Dialog<Void> {
             }
         }
         try {
-            printService.printSilent(config, chequeData);
+            printService.printSilent(config, chequeData, userId);
 
             // Increment the cheque book counter if a book is selected and we actually
             // printed

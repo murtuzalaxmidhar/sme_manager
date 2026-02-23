@@ -38,9 +38,9 @@ public class PurchaseEntryView extends VBox implements RefreshableView {
     private ComboBox<Vendor> vendorComboBox;
     private Label statusLabel;
 
-    public PurchaseEntryView(VendorCache vendorCache) {
+    public PurchaseEntryView(VendorCache vendorCache, com.lax.sme_manager.domain.User currentUser) {
         this.vendorCache = vendorCache;
-        this.viewModel = new PurchaseEntryViewModel(vendorCache);
+        this.viewModel = new PurchaseEntryViewModel(vendorCache, currentUser);
 
         initializeUI();
         setupBindings();
@@ -347,7 +347,7 @@ public class PurchaseEntryView extends VBox implements RefreshableView {
                     result.purchaseId,
                     null);
             new ChequePreviewDialog(chequeData, () -> {
-            }).show();
+            }, (viewModel.getCurrentUser() != null) ? viewModel.getCurrentUser().getId() : null).show();
 
             // Clear vendor combo after reset
             vendorComboBox.getEditor().clear();

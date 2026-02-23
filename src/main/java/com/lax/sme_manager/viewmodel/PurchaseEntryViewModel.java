@@ -7,19 +7,16 @@ import com.lax.sme_manager.repository.VendorRepository;
 import com.lax.sme_manager.repository.model.PurchaseEntity;
 import com.lax.sme_manager.repository.model.VendorEntity;
 import com.lax.sme_manager.util.AppLogger;
-import com.lax.sme_manager.util.EntityConverters;
 import com.lax.sme_manager.util.VendorCache;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
 import javafx.concurrent.Task;
 
+import java.util.Optional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.slf4j.Logger;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class PurchaseEntryViewModel {
     private static final Logger LOGGER = AppLogger.getLogger(PurchaseEntryViewModel.class);
@@ -30,6 +27,7 @@ public class PurchaseEntryViewModel {
     private final PurchaseRepository purchaseRepository;
     private final VendorRepository vendorRepository;
     private final VendorCache vendorCache;
+    private final com.lax.sme_manager.domain.User currentUser;
 
     // Input Properties
     public final ObjectProperty<LocalDate> entryDate = new SimpleObjectProperty<>(LocalDate.now());
@@ -47,6 +45,10 @@ public class PurchaseEntryViewModel {
     public final StringProperty commissionPercent = new SimpleStringProperty("2.00");
 
     // Calculated Outputs (Read-only for UI, but updated by VM)
+    public com.lax.sme_manager.domain.User getCurrentUser() {
+        return currentUser;
+    }
+
     private final DoubleProperty baseAmount = new SimpleDoubleProperty(0.0);
     private final DoubleProperty marketFeeAmount = new SimpleDoubleProperty(0.0);
     private final DoubleProperty commissionFeeAmount = new SimpleDoubleProperty(0.0);
@@ -56,8 +58,9 @@ public class PurchaseEntryViewModel {
     public final StringProperty statusMessage = new SimpleStringProperty("");
     public final BooleanProperty isStatusError = new SimpleBooleanProperty(false);
 
-    public PurchaseEntryViewModel(VendorCache vendorCache) {
+    public PurchaseEntryViewModel(VendorCache vendorCache, com.lax.sme_manager.domain.User currentUser) {
         this.vendorCache = vendorCache;
+        this.currentUser = currentUser;
         this.vendorRepository = new VendorRepository();
         this.purchaseRepository = new PurchaseRepository();
 
@@ -77,7 +80,9 @@ public class PurchaseEntryViewModel {
         advancePaid.addListener((obs, o, n) -> {
             if (n) {
                 marketFeePercent.set("0.00");
-                commissionPercent.set("2.00"); // Standard commission even if advance? User requirement says 2.00 in code but 0.00 in previous logic. Keeping 0.00 as per common sense for Advance.
+                commissionPercent.set("2.00"); // Standard commission even if advance? User requirement says 2.00 in
+                                               // code but 0.00 in previous logic. Keeping 0.00 as per common sense for
+                                               // Advance.
                 marketFeePercent.set("0.00");
                 commissionPercent.set("0.00");
                 paymentMode.set("ADVANCE");
@@ -253,13 +258,24 @@ public class PurchaseEntryViewModel {
 
         // New Vendor Creation Logic
         if (vendorId == -1) {
-            VendorEntity newVendor = new VendorEntity();
-            newVendor.setName(currentVendor.getName());
-            newVendor.setNotes("Created from Purchase Entry");
-            newVendor.setCreatedAt(LocalDateTime.now());
-            newVendor.setUpdatedAt(LocalDateTime.now());
-            VendorEntity saved = vendorRepository.insert(newVendor);
-            vendorId = saved.getId();
+            // Check if a vendor with this name already exists (including deleted ones)
+            Optional<VendorEntity> existing = vendorRepository.findByName(currentVendor.getName());
+
+            if (existing.isPresent()) {
+                vendorId = existing.get().getId();
+                // If it was deleted, reactivate it
+                if (existing.get().getIsDeleted() != null && existing.get().getIsDeleted()) {
+                    vendorRepository.reactivate(vendorId);
+                }
+            } else {
+                VendorEntity newVendor = new VendorEntity();
+                newVendor.setName(currentVendor.getName());
+                newVendor.setNotes("Created from Purchase Entry");
+                newVendor.setCreatedAt(LocalDateTime.now());
+                newVendor.setUpdatedAt(LocalDateTime.now());
+                VendorEntity saved = vendorRepository.insert(newVendor);
+                vendorId = saved.getId();
+            }
 
             // Update cache
             Platform.runLater(vendorCache::refreshCache);
@@ -285,7 +301,7 @@ public class PurchaseEntryViewModel {
         entity.setNotes(notes.get());
         entity.setPaymentMode(paymentMode.get());
         entity.setAdvancePaid(advancePaid.get());
-        
+
         // Dynamic Status Logic
         if (advancePaid.get()) {
             entity.setStatus("PAID (ADVANCE)");
@@ -298,9 +314,9 @@ public class PurchaseEntryViewModel {
             } else if ("UPI".equalsIgnoreCase(mode)) {
                 entity.setStatus("PAID (UPI)");
             } else {
-                entity.setStatus("UNPAID");
             }
         }
+        entity.setCreatedByUser(currentUser != null ? currentUser.getUsername() : "admin");
         entity.setCreatedAt(LocalDateTime.now());
         entity.setUpdatedAt(LocalDateTime.now());
 

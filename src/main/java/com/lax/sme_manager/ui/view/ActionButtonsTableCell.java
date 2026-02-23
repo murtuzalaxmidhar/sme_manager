@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  * Modern Action Buttons for TableView with soft-tinted backgrounds.
  */
 public class ActionButtonsTableCell extends TableCell<PurchaseEntity, Void> {
-    
+
     private final HBox container = new HBox(10);
     private final Button viewBtn;
     private final Button editBtn;
@@ -25,38 +25,41 @@ public class ActionButtonsTableCell extends TableCell<PurchaseEntity, Void> {
             Consumer<PurchaseEntity> onView,
             Consumer<PurchaseEntity> onEdit,
             Consumer<PurchaseEntity> onPrint,
-            Consumer<PurchaseEntity> onDelete) {
-        
-        // 1. View Button (Blue)
-        viewBtn = createModernButton(
-            "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z",
-            "#E3F2FD", "#1976D2", "#BBDEFB", "View Invoice"
-        );
-
-        // 2. Edit Button (Orange)
-        editBtn = createModernButton(
-            "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
-            "#FFF3E0", "#F57C00", "#FFE0B2", "Edit Entry"
-        );
-
-        // 3. Print Button (Teal)
-        printBtn = createModernButton(
-            "M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z",
-            "#E0F2F1", "#00897B", "#B2DFDB", "Print Cheque"
-        );
+            Consumer<PurchaseEntity> onDelete,
+            Consumer<PurchaseEntity> onClear) {
 
         // 4. Delete Button (Red)
         deleteBtn = createModernButton(
-            "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
-            "#FFEBEE", "#D32F2F", "#FFCDD2", "Delete Permanent"
-        );
+                "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
+                "#FFEBEE", "#D32F2F", "#FFCDD2", "Delete Entry");
+
+        // 1. View Button (Blue)
+        viewBtn = createModernButton(
+                "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z",
+                "#E3F2FD", "#1976D2", "#BBDEFB", "View Invoice");
+
+        // 2. Edit Button (Orange)
+        editBtn = createModernButton(
+                "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+                "#FFF3E0", "#F57C00", "#FFE0B2", "Edit Entry");
+
+        // 3. Print Button (Teal)
+        printBtn = createModernButton(
+                "M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z",
+                "#E0F2F1", "#00897B", "#B2DFDB", "Print Cheque");
+
+        // 5. Clear Button (Green/Success)
+        Button clearBtn = createModernButton(
+                "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z",
+                "#E8F5E9", "#2E7D32", "#C8E6C9", "Mark as Cleared (Bank Match)");
 
         viewBtn.setOnAction(e -> applyAction(onView));
         editBtn.setOnAction(e -> applyAction(onEdit));
         printBtn.setOnAction(e -> applyAction(onPrint));
         deleteBtn.setOnAction(e -> applyAction(onDelete));
+        clearBtn.setOnAction(e -> applyAction(onClear));
 
-        container.getChildren().addAll(viewBtn, editBtn, printBtn, deleteBtn);
+        container.getChildren().addAll(viewBtn, editBtn, printBtn, clearBtn, deleteBtn);
         container.setAlignment(Pos.CENTER);
     }
 
@@ -67,7 +70,8 @@ public class ActionButtonsTableCell extends TableCell<PurchaseEntity, Void> {
         }
     }
 
-    private Button createModernButton(String svgPath, String bgColor, String iconColor, String hoverColor, String tooltip) {
+    private Button createModernButton(String svgPath, String bgColor, String iconColor, String hoverColor,
+            String tooltip) {
         SVGPath path = new SVGPath();
         path.setContent(svgPath);
         path.setFill(Color.web(iconColor));
@@ -77,9 +81,11 @@ public class ActionButtonsTableCell extends TableCell<PurchaseEntity, Void> {
         Button btn = new Button();
         btn.setGraphic(path);
         btn.setTooltip(new Tooltip(tooltip));
-        
+
         // Base Style
-        String baseStyle = String.format("-fx-background-color: %s; -fx-padding: 5 8; -fx-border-radius: 4; -fx-background-radius: 4; -fx-cursor: hand;", bgColor);
+        String baseStyle = String.format(
+                "-fx-background-color: %s; -fx-padding: 5 8; -fx-border-radius: 4; -fx-background-radius: 4; -fx-cursor: hand;",
+                bgColor);
         btn.setStyle(baseStyle);
 
         // Hover Effect
@@ -97,9 +103,10 @@ public class ActionButtonsTableCell extends TableCell<PurchaseEntity, Void> {
         } else {
             PurchaseEntity p = getTableView().getItems().get(getIndex());
             if (p != null) {
-                boolean isCheque = "CHEQUE".equalsIgnoreCase(p.getPaymentMode()) && !Boolean.TRUE.equals(p.getAdvancePaid());
+                boolean isCheque = "CHEQUE".equalsIgnoreCase(p.getPaymentMode())
+                        && !Boolean.TRUE.equals(p.getAdvancePaid());
                 printBtn.setDisable(!isCheque);
-                
+
                 // Adjust appearance for disabled state
                 if (!isCheque) {
                     printBtn.setOpacity(0.4);
@@ -108,6 +115,22 @@ public class ActionButtonsTableCell extends TableCell<PurchaseEntity, Void> {
                 } else {
                     printBtn.setOpacity(1.0);
                     printBtn.setTooltip(new Tooltip("Print Cheque"));
+                }
+
+                // Clear button logic: Only enable if status is PAID and not already CLEARED
+                Button clearBtn = (Button) container.getChildren().get(3);
+                boolean isPaid = "PAID".equalsIgnoreCase(p.getStatus());
+                boolean isCleared = "CLEARED".equalsIgnoreCase(p.getStatus());
+                clearBtn.setDisable(!isPaid || isCleared);
+                if (isCleared) {
+                    clearBtn.setOpacity(0.4);
+                    clearBtn.setTooltip(new Tooltip("Already Cleared"));
+                } else if (!isPaid) {
+                    clearBtn.setOpacity(0.4);
+                    clearBtn.setTooltip(new Tooltip("Mark as PAID before clearing"));
+                } else {
+                    clearBtn.setOpacity(1.0);
+                    clearBtn.setTooltip(new Tooltip("Mark as Cleared (Bank Match)"));
                 }
             }
             setGraphic(container);

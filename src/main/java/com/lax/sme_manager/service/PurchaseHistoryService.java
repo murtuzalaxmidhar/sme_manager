@@ -51,31 +51,15 @@ public class PurchaseHistoryService {
             LOGGER.info("Fetching purchases - Page: {}, Vendors: {}, Range: {} to {}, Search: {}",
                     pageNumber, vendorIds, startDate, endDate, searchQuery);
 
-            // Fetch from repository
-            List<PurchaseEntity> purchases = purchaseRepository.findAll();
+            int offset = pageNumber * PAGE_SIZE;
 
-            // In-memory filtering
-            List<PurchaseEntity> filtered = purchases.stream()
-                    .filter(p -> isWithinDateRange(p, startDate, endDate))
-                    .filter(p -> vendorIds == null || vendorIds.isEmpty() || vendorIds.contains(p.getVendorId()))
-                    .filter(p -> isWithinAmountRange(p, minAmount, maxAmount))
-                    .filter(p -> chequeIssued == null || isMatchesChequeFilter(p, chequeIssued))
-                    .filter(p -> isMatchesSearchQuery(p, searchQuery))
-                    .toList();
+            // Fetch natively filtered and paginated results from DB
+            List<PurchaseEntity> filtered = purchaseRepository.findFilteredPurchases(
+                    startDate, endDate, vendorIds, minAmount, maxAmount, chequeIssued,
+                    searchQuery, PAGE_SIZE, offset);
 
-            LOGGER.debug("Filtered: {} purchases (from {} total)", filtered.size(), purchases.size());
-
-            // Apply pagination
-            int fromIndex = pageNumber * PAGE_SIZE;
-            int toIndex = Math.min(fromIndex + PAGE_SIZE, filtered.size());
-
-            if (fromIndex >= filtered.size()) {
-                if (filtered.isEmpty()) return new ArrayList<>();
-                LOGGER.warn("Page {} out of range", pageNumber);
-                return new ArrayList<>();
-            }
-
-            return filtered.subList(fromIndex, toIndex);
+            LOGGER.debug("Loaded: {} purchases for page {}", filtered.size(), pageNumber);
+            return filtered;
 
         } catch (Exception e) {
             LOGGER.error("Error fetching purchases with filters", e);
@@ -96,16 +80,8 @@ public class PurchaseHistoryService {
             String searchQuery) {
 
         try {
-            List<PurchaseEntity> purchases = purchaseRepository.findAll();
-
-            return (int) purchases.stream()
-                    .filter(p -> isWithinDateRange(p, startDate, endDate))
-                    .filter(p -> vendorIds == null || vendorIds.isEmpty() || vendorIds.contains(p.getVendorId()))
-                    .filter(p -> isWithinAmountRange(p, minAmount, maxAmount))
-                    .filter(p -> chequeIssued == null || isMatchesChequeFilter(p, chequeIssued))
-                    .filter(p -> isMatchesSearchQuery(p, searchQuery))
-                    .count();
-
+            return purchaseRepository.countFilteredPurchases(
+                    startDate, endDate, vendorIds, minAmount, maxAmount, chequeIssued, searchQuery);
         } catch (Exception e) {
             LOGGER.error("Error calculating total filtered count", e);
             return 0;
@@ -168,58 +144,22 @@ public class PurchaseHistoryService {
         }
     }
 
-    // ========== Helper Methods ==========
-
-    private boolean isWithinDateRange(PurchaseEntity purchase, LocalDate startDate, LocalDate endDate) {
-        if (startDate == null || endDate == null)
-            return true;
-        LocalDate purchaseDate = purchase.getEntryDate();
-        return !purchaseDate.isBefore(startDate) && !purchaseDate.isAfter(endDate);
+    public void updateStatus(int id, String status) {
+        try {
+            purchaseRepository.updateStatus(id, status);
+            LOGGER.info("Updated purchase ID: {} to status: {}", id, status);
+        } catch (Exception e) {
+            LOGGER.error("Error updating status for purchase ID: {}", id, e);
+            throw e;
+        }
     }
 
-    private boolean isWithinAmountRange(PurchaseEntity purchase, BigDecimal minAmount, BigDecimal maxAmount) {
-        if (minAmount == null && maxAmount == null)
-            return true;
-
-        BigDecimal amount = purchase.getGrandTotal();
-        if (amount == null)
-            return false;
-
-        if (minAmount != null && amount.compareTo(minAmount) < 0)
-            return false;
-        if (maxAmount != null && amount.compareTo(maxAmount) > 0)
-            return false;
-
-        return true;
-    }
-
-    private boolean isMatchesChequeFilter(PurchaseEntity purchase, boolean chequeIssued) {
-        boolean hasCheque = purchase.getChequeNumber() != null && !purchase.getChequeNumber().isBlank();
-        return chequeIssued == hasCheque;
-    }
-
-    private boolean isMatchesSearchQuery(PurchaseEntity purchase, String query) {
-        if (query == null || query.isBlank())
-            return true;
-        String lowerQuery = query.toLowerCase();
-        
-        // Match cheque number
-        if (purchase.getChequeNumber() != null && purchase.getChequeNumber().toLowerCase().contains(lowerQuery))
-            return true;
-            
-        // Match status
-        if (purchase.getStatus() != null && purchase.getStatus().toLowerCase().contains(lowerQuery))
-            return true;
-
-        // Match vendor name (Expert touch)
-        String vendorName = vendorRepository.findAllVendors().stream()
-                .filter(v -> v.getId() == purchase.getVendorId())
+    public String getVendorName(int vendorId) {
+        return vendorRepository.findAllVendors().stream()
+                .filter(v -> v.getId() == vendorId)
                 .map(com.lax.sme_manager.domain.Vendor::getName)
                 .findFirst()
-                .orElse("");
-        if (vendorName.toLowerCase().contains(lowerQuery))
-            return true;
-
-        return false;
+                .orElse("Unknown Vendor");
     }
+
 }

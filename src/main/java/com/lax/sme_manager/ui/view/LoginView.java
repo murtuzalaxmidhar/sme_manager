@@ -1,5 +1,7 @@
 package com.lax.sme_manager.ui.view;
 
+import com.lax.sme_manager.domain.User;
+import com.lax.sme_manager.repository.UserRepository;
 import com.lax.sme_manager.util.PasswordManager;
 import javafx.animation.*;
 import javafx.geometry.Insets;
@@ -13,19 +15,23 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
+import java.util.function.Consumer;
 
 /**
  * Compact login dialog matching the app's light theme.
  */
 public class LoginView extends StackPane {
 
-    private final Runnable onLoginSuccess;
+    private final Consumer<User> onLoginSuccess;
+    private final UserRepository userRepository;
+    private TextField usernameField;
     private PasswordField passwordField;
     private Label errorLabel;
     private VBox loginCard;
 
-    public LoginView(Runnable onLoginSuccess) {
+    public LoginView(Consumer<User> onLoginSuccess) {
         this.onLoginSuccess = onLoginSuccess;
+        this.userRepository = new UserRepository();
         buildUI();
     }
 
@@ -64,23 +70,37 @@ public class LoginView extends StackPane {
         subtitle.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 12));
         subtitle.setTextFill(Color.web("#94a3b8"));
 
-        // --- Password Field ---
-        VBox fieldContainer = new VBox(8);
-        fieldContainer.setAlignment(Pos.CENTER_LEFT);
-        fieldContainer.setPadding(new Insets(10, 0, 0, 0));
+        // --- Fields Container ---
+        VBox fieldsBox = new VBox(15);
+        fieldsBox.setAlignment(Pos.CENTER_LEFT);
 
-        Label fieldLabel = new Label("ADMIN PASSWORD");
-        fieldLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 11));
-        fieldLabel.setTextFill(Color.web("#64748b"));
+        // Username
+        VBox userContainer = new VBox(5);
+        Label userLabel = new Label("USERNAME");
+        userLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 10));
+        userLabel.setTextFill(Color.web("#64748b"));
+        usernameField = new TextField();
+        usernameField.setPromptText("Enter username...");
+        usernameField.setPrefHeight(40);
+        usernameField.setStyle(getFieldStyle(false));
+        usernameField.focusedProperty()
+                .addListener((obs, old, focused) -> usernameField.setStyle(getFieldStyle(focused)));
+        userContainer.getChildren().addAll(userLabel, usernameField);
 
+        // Password
+        VBox passContainer = new VBox(5);
+        Label passLabel = new Label("PASSWORD");
+        passLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 10));
+        passLabel.setTextFill(Color.web("#64748b"));
         passwordField = new PasswordField();
-        passwordField.setPromptText("Enter your password...");
-        passwordField.setPrefHeight(44);
+        passwordField.setPromptText("Enter password...");
+        passwordField.setPrefHeight(40);
         passwordField.setStyle(getFieldStyle(false));
         passwordField.focusedProperty()
                 .addListener((obs, old, focused) -> passwordField.setStyle(getFieldStyle(focused)));
+        passContainer.getChildren().addAll(passLabel, passwordField);
 
-        fieldContainer.getChildren().addAll(fieldLabel, passwordField);
+        fieldsBox.getChildren().addAll(userContainer, passContainer);
 
         // --- Error Label ---
         errorLabel = new Label();
@@ -100,6 +120,11 @@ public class LoginView extends StackPane {
         loginBtn.setOnMouseExited(e -> loginBtn.setStyle(getBtnStyle(false)));
         loginBtn.setOnAction(e -> handleLogin());
 
+        usernameField.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER)
+                passwordField.requestFocus();
+        });
+
         passwordField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER)
                 handleLogin();
@@ -117,7 +142,7 @@ public class LoginView extends StackPane {
 
         card.getChildren().addAll(
                 iconContainer, title, subtitle,
-                fieldContainer, errorLabel, loginBtn, forgotLink, footer);
+                fieldsBox, errorLabel, loginBtn, forgotLink, footer);
         return card;
     }
 
@@ -146,16 +171,20 @@ public class LoginView extends StackPane {
     }
 
     private void handleLogin() {
+        String username = usernameField.getText().trim();
         String password = passwordField.getText();
-        if (password.isEmpty()) {
-            showError("Please enter a password");
+
+        if (username.isEmpty() || password.isEmpty()) {
+            showError("Please enter both username and password");
             shakeCard();
             return;
         }
-        if (PasswordManager.validateLogin(password)) {
-            onLoginSuccess.run();
+
+        User user = userRepository.authenticate(username, password);
+        if (user != null) {
+            onLoginSuccess.accept(user);
         } else {
-            showError("Incorrect password. Please try again.");
+            showError("Invalid credentials. Please try again.");
             shakeCard();
             passwordField.clear();
             passwordField.requestFocus();
@@ -245,7 +274,7 @@ public class LoginView extends StackPane {
 
         ParallelTransition entrance = new ParallelTransition(fade, slide);
         entrance.setDelay(Duration.millis(100));
-        entrance.setOnFinished(e -> passwordField.requestFocus());
+        entrance.setOnFinished(e -> usernameField.requestFocus());
         entrance.play();
     }
 }

@@ -38,6 +38,7 @@ public class PurchaseEntity {
     private String chequeNumber;
     private LocalDate chequeDate;
     private Boolean isDeleted;
+    private String createdByUser;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

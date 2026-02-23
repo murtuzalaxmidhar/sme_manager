@@ -53,14 +53,30 @@ public class BackupService {
 
     private void cleanupOldBackups(Path targetDir) {
         try {
+            LocalDateTime threshold = LocalDateTime.now().minusDays(30);
             Files.list(targetDir)
                     .filter(p -> p.getFileName().toString().startsWith("data_backup_"))
-                    .sorted((p1, p2) -> Long.compare(p2.toFile().lastModified(), p1.toFile().lastModified()))
-                    .skip(30)
                     .forEach(p -> {
                         try {
-                            Files.delete(p);
-                        } catch (IOException ignored) {
+                            // Extract date from filename: data_backup_yyyy-MM-dd_HHmm.db
+                            String fileName = p.getFileName().toString();
+                            String dateStr = fileName.replace("data_backup_", "").replace(".db", "");
+                            LocalDateTime fileDate = LocalDateTime.parse(dateStr, FORMATTER);
+
+                            if (fileDate.isBefore(threshold)) {
+                                Files.delete(p);
+                                LOGGER.info("Deleted old backup: {}", p.getFileName());
+                            }
+                        } catch (Exception ignored) {
+                            // If parsing fails, use file last modified as fallback
+                            try {
+                                if (Files.getLastModifiedTime(p).toInstant()
+                                        .isBefore(threshold.atZone(java.time.ZoneId.systemDefault()).toInstant())) {
+                                    Files.delete(p);
+                                    LOGGER.info("Deleted old backup (fallback): {}", p.getFileName());
+                                }
+                            } catch (IOException ignored2) {
+                            }
                         }
                     });
         } catch (IOException e) {
