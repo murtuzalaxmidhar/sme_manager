@@ -580,8 +580,17 @@ public class ChequeSettingsView extends VBox {
             // Backup current config before resetting
             savedConfig = config;
 
+            String currentBank = bankTemplateSelector.getValue();
+            if (currentBank == null || currentBank.isEmpty()) {
+                currentBank = "Canara Bank"; // the ultimate fallback
+            }
+
+            // Get baseline object and dynamically adjust coordinates for the current bank
             config = ChequeConfig.getFactoryDefaults();
+            config = ChequeTemplateUIUtil.applyBankSpecificDefaults(config, currentBank);
+
             configRepo.saveConfig(config);
+            configRepo.saveAsTemplate(config); // Ensure the bank template table is also reset
 
             offsetXSpinner.getValueFactory().setValue(0.0);
             offsetYSpinner.getValueFactory().setValue(0.0);

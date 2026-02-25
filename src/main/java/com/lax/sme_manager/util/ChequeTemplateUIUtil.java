@@ -471,4 +471,45 @@ public class ChequeTemplateUIUtil {
             pane.getChildren().add(finalImgView);
         }
     }
+
+    /**
+     * Re-calibrates an existing ChequeConfig's default text coordinates so they 
+     * mathematically align with the specific background lines of the given bank.
+     */
+    public static com.lax.sme_manager.repository.model.ChequeConfig applyBankSpecificDefaults(
+            com.lax.sme_manager.repository.model.ChequeConfig cfg, String bankName) {
+        
+        ChequeLayout layout = getBankLayout(bankName);
+        cfg.setBankName(bankName);
+        cfg.setDateX(layout.dateBoxX);
+        cfg.setDateY(layout.dateBoxY);
+        
+        // Compute date positions by shifting the factory baseline relative to the bank's dateBox position
+        StringBuilder posStr = new StringBuilder();
+        double shiftX = layout.dateBoxX - 159.79; // Difference from base Canara X
+        double shiftY = layout.dateBoxY - 9.04;   // Difference from base Canara Y
+        
+        // Standard X offsets from the first box: 
+        double[] xOffsets = {0, 5.59, 10.56, 16.23, 22.08, 27.22, 33.07, 38.21};
+        for(int i = 0; i < 8; i++) {
+            // Base Canara Date Box 0 is 159.69, 9.03
+            double newX = 159.69 + shiftX + xOffsets[i];
+            double newY = 9.03 + shiftY;
+            posStr.append(String.format("%.2f,%.2f", newX, newY));
+            if(i < 7) posStr.append(";");
+        }
+        cfg.setDatePositions(posStr.toString());
+
+        // Place the text relative to the drawn lines padding
+        cfg.setPayeeX(layout.payLineStartX);
+        cfg.setPayeeY(layout.payLineY - 6.0); // 6mm above the line
+        
+        cfg.setAmountWordsX(layout.wordsLine1StartX);
+        cfg.setAmountWordsY(layout.wordsLine1Y - 8.0); // 8mm above the line
+        
+        cfg.setAmountDigitsX(layout.rupeeBoxX + 3.55); // 3.55mm inside the box horizontally
+        cfg.setAmountDigitsY(layout.rupeeBoxY + 0.78); // 0.78mm lower than box top
+
+        return cfg;
+    }
 }

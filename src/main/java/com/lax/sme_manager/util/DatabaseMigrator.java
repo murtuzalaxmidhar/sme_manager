@@ -305,42 +305,6 @@ public class DatabaseMigrator {
             }
         }
     }
-
-    private void migrateToV14(Connection conn) throws SQLException {
-        LOGGER.info("Migrating to V14: Creating users table and seeding admin account...");
-        String sql = "CREATE TABLE IF NOT EXISTS users (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "username TEXT UNIQUE NOT NULL," +
-                "password TEXT NOT NULL," +
-                "role TEXT NOT NULL DEFAULT 'OPERATOR'," +
-                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-                ")";
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        }
-
-        // Seed with existing admin password if users table is empty
-        String checkSql = "SELECT COUNT(*) FROM users";
-        try (Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(checkSql)) {
-            if (rs.next() && rs.getInt(1) == 0) {
-                // Assuming ConfigManager is available and provides the legacy password
-                // If ConfigManager is not available, this line will cause a compilation error.
-                // For this exercise, we assume it exists in the project.
-                String legacyPw = ConfigManager.getInstance().getProperty(ConfigManager.KEY_LOGIN_PASSWORD, "admin123");
-                String insertSql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
-                try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
-                    pstmt.setString(1, "admin");
-                    pstmt.setString(2, legacyPw); // We'll assume plaintext for now as per current system, can add
-                                                  // BCrypt later if needed
-                    pstmt.setString(3, "ADMIN");
-                    pstmt.executeUpdate();
-                }
-                LOGGER.info("Seeded users table with admin account migrating legacy password.");
-            }
-        }
-    }
-
     private void createBaseSchema(Statement stmt) throws SQLException {
         // Vendors
         stmt.execute("""
