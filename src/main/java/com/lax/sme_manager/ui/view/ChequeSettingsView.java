@@ -5,6 +5,8 @@ import com.lax.sme_manager.repository.SignatureRepository;
 import com.lax.sme_manager.repository.model.ChequeConfig;
 import com.lax.sme_manager.repository.model.SignatureConfig;
 import com.lax.sme_manager.ui.theme.LaxTheme;
+import com.lax.sme_manager.ui.component.AlertUtils;
+import com.lax.sme_manager.util.ChequeTemplateUIUtil;
 import com.lax.sme_manager.util.IndianNumberToWords;
 
 import javafx.geometry.Insets;
@@ -15,8 +17,6 @@ import javafx.scene.effect.BlendMode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
@@ -29,7 +29,6 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.lax.sme_manager.ui.component.AlertUtils;
 
 /**
  * Cheque Settings — Sidebar view for editing and saving cheque alignment.
@@ -61,6 +60,7 @@ public class ChequeSettingsView extends VBox {
     private Spinner<Double> offsetYSpinner;
     private Spinner<Double> dateOffsetXSpinner;
     private Spinner<Double> dateOffsetYSpinner;
+    private ComboBox<String> bankTemplateSelector;
 
     private final com.lax.sme_manager.repository.ChequeBookRepository bookRepo = new com.lax.sme_manager.repository.ChequeBookRepository();
     private VBox chequeBookListContainer;
@@ -103,6 +103,29 @@ public class ChequeSettingsView extends VBox {
         subtitle.setStyle("-fx-font-size: 13px; -fx-text-fill: #64748b; -fx-wrap-text: true;");
         subtitle.setWrapText(true);
 
+        // --- Template Selector ---
+        HBox templateBox = new HBox(15);
+        templateBox.setAlignment(Pos.CENTER_LEFT);
+        templateBox.setPadding(new Insets(10, 16, 10, 16));
+        templateBox.setStyle(
+                "-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-background-radius: 8;");
+
+        Label tLbl = new Label("Bank Template:");
+        tLbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #334155;");
+
+        bankTemplateSelector = new ComboBox<>();
+        bankTemplateSelector.setPrefWidth(220);
+        refreshBankTemplates();
+        bankTemplateSelector.getSelectionModel().select(config.getBankName());
+
+        bankTemplateSelector.setOnAction(e -> handleTemplateSwitch());
+
+        Button addTemplateBtn = new Button("+ Add New Bank");
+        addTemplateBtn.setStyle(LaxTheme.getButtonStyle(LaxTheme.ButtonType.SECONDARY) + "; -fx-font-size: 11px;");
+        addTemplateBtn.setOnAction(e -> showAddBankTemplateDialog());
+
+        templateBox.getChildren().addAll(tLbl, bankTemplateSelector, addTemplateBtn);
+
         // --- Cheque Canvas ---
         StackPane canvasContainer = new StackPane();
         canvasContainer.setPadding(new Insets(10));
@@ -114,36 +137,7 @@ public class ChequeSettingsView extends VBox {
         chequePane.setMaxSize(PREVIEW_WIDTH_PX, PREVIEW_HEIGHT_PX);
 
         // Background — cheque template
-        try {
-            String imagePath = "/images/standard_cheque.png";
-            java.net.URL imageUrl = getClass().getResource(imagePath);
-            Image bg = null;
-
-            if (imageUrl != null) {
-                // Method 1: Safely load from classpath (Best practice)
-                bg = new Image(imageUrl.toExternalForm());
-            } else {
-                // Method 2: Fallback to your direct file path (Works during development)
-                File file = new File("src/main/resources/images/standard_cheque.png");
-                if (file.exists()) {
-                    bg = new Image(file.toURI().toString());
-                }
-            }
-
-            if (bg != null && !bg.isError()) {
-                bgView = new ImageView(bg);
-                bgView.setFitWidth(PREVIEW_WIDTH_PX);
-                bgView.setFitHeight(PREVIEW_HEIGHT_PX);
-                bgView.setPreserveRatio(false);
-                bgView.setLayoutY(-12); // Tweak this number (e.g., -10, -15) until the lines hit the text
-                bgView.setLayoutX(-5);
-                chequePane.getChildren().add(bgView);
-            } else {
-                drawFallbackChequeTemplate();
-            }
-        } catch (Exception e) {
-            drawFallbackChequeTemplate();
-        }
+        drawFallbackChequeTemplate(); // Now handled by the new method which uses ChequeTemplateUIUtil
 
         addSampleElements();
         canvasContainer.getChildren().add(chequePane);
@@ -180,7 +174,8 @@ public class ChequeSettingsView extends VBox {
         buttonBar.getChildren().addAll(saveBtn, resetBtn, restoreBtn, helpBtn);
 
         // --- Layout ---
-        VBox content = new VBox(16, title, subtitle, canvasContainer, coordPanel, calibrationPanel, chequeBookPanel,
+        VBox content = new VBox(16, title, subtitle, templateBox, canvasContainer, coordPanel, calibrationPanel,
+                chequeBookPanel,
                 buttonBar);
         content.setPadding(new Insets(0));
 
@@ -197,66 +192,9 @@ public class ChequeSettingsView extends VBox {
     }
 
     private void drawFallbackChequeTemplate() {
-        chequePane.setStyle("-fx-background-color: #ffffff; -fx-border-color: #94a3b8; -fx-border-width: 1;");
-
-        // Draw Date Boxes (DD MM YYYY) at standard position
-        double startX = 159.79 * MM_TO_PX;
-        double startY = 9.04 * MM_TO_PX;
-        double boxSize = 5 * MM_TO_PX; // 5mm boxes
-
-        HBox dateBoxes = new HBox(2); // 2px gap between boxes
-        dateBoxes.setLayoutX(startX);
-        dateBoxes.setLayoutY(startY);
-
-        for (int i = 0; i < 8; i++) {
-            Rectangle rect = new Rectangle(boxSize, boxSize);
-            rect.setFill(Color.TRANSPARENT);
-            rect.setStroke(Color.LIGHTGRAY);
-            dateBoxes.getChildren().add(rect);
-        }
-
-        // "Pay" line at ~37mm X, 21mm Y
-        Label payLabel = new Label("Pay");
-        payLabel.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: black; -fx-font-family: 'Courier New';");
-        payLabel.setLayoutX(28 * MM_TO_PX);
-        payLabel.setLayoutY(22 * MM_TO_PX);
-
-        Rectangle payBox = new Rectangle(120 * MM_TO_PX, 8 * MM_TO_PX);
-        payBox.setFill(Color.TRANSPARENT);
-        payBox.setStroke(Color.LIGHTGRAY);
-        payBox.setStrokeWidth(1);
-        payBox.setLayoutX(37 * MM_TO_PX);
-        payBox.setLayoutY(19 * MM_TO_PX);
-
-        // "Amount" words line at ~37mm X, 30mm Y
-        Label amountLabel = new Label("Rupees");
-        amountLabel.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: black; -fx-font-family: 'Courier New';");
-        amountLabel.setLayoutX(24 * MM_TO_PX);
-        amountLabel.setLayoutY(30 * MM_TO_PX);
-
-        Rectangle amountBox = new Rectangle(110 * MM_TO_PX, 8 * MM_TO_PX);
-        amountBox.setFill(Color.TRANSPARENT);
-        amountBox.setStroke(Color.LIGHTGRAY);
-        amountBox.setStrokeWidth(1);
-        amountBox.setLayoutX(37 * MM_TO_PX);
-        amountBox.setLayoutY(30 * MM_TO_PX);
-
-        // Draw MICR Band (Bottom 19mm is blank white space)
-        Rectangle micrBand = new Rectangle(PREVIEW_WIDTH_PX, 19 * MM_TO_PX);
-        micrBand.setLayoutY(PREVIEW_HEIGHT_PX - (19 * MM_TO_PX));
-        micrBand.setFill(Color.web("#f8fafc"));
-        micrBand.setStroke(Color.LIGHTGRAY);
-
-        // Draw Rupee Symbol Box at ~157mm X, 37mm Y
-        Label rupeeSymbol = new Label("₹");
-        rupeeSymbol.setStyle("-fx-border-color: lightgray; -fx-padding: 4; -fx-font-size: 14px;");
-        rupeeSymbol.setLayoutX(160 * MM_TO_PX);
-        rupeeSymbol.setLayoutY(37 * MM_TO_PX);
-        rupeeSymbol.setPrefSize(35 * MM_TO_PX, 8 * MM_TO_PX);
-
-        chequePane.getChildren().addAll(dateBoxes, payLabel, payBox, amountLabel, amountBox, micrBand, rupeeSymbol);
+        String bankName = (bankTemplateSelector != null) ? bankTemplateSelector.getValue() : config.getBankName();
+        ChequeTemplateUIUtil.drawBankSpecificBackground(chequePane, bankName, MM_TO_PX, PREVIEW_WIDTH_PX,
+                PREVIEW_HEIGHT_PX);
     }
 
     private void addSampleElements() {
@@ -299,7 +237,7 @@ public class ChequeSettingsView extends VBox {
         lblAmountWords.setMinHeight(30);
 
         // Amount Digits
-        String digits = String.format("**%.2f/-", SAMPLE_AMOUNT);
+        String digits = String.format("%.2f/-", SAMPLE_AMOUNT);
         lblAmountDigits = createDraggableLabel(digits,
                 config.getAmountDigitsX() > 0 ? config.getAmountDigitsX() : 163.55,
                 config.getAmountDigitsY() > 0 ? config.getAmountDigitsY() : 37.78,
@@ -563,13 +501,75 @@ public class ChequeSettingsView extends VBox {
         config.setDateOffsetX(dateOffsetXSpinner.getValue());
         config.setDateOffsetY(dateOffsetYSpinner.getValue());
 
+        config.setBankName(bankTemplateSelector.getValue());
+
+        LOGGER.info("Saving alignment for bank: {}", config.getBankName());
         configRepo.saveConfig(config);
+        configRepo.saveAsTemplate(config); // Save back to bank_templates too
 
         if (onSaveCallback != null) {
             onSaveCallback.run();
         }
 
-        AlertUtils.showInfo("Information", "✅ Alignment saved! All future cheque prints will use these positions.");
+        AlertUtils.showInfo("Information",
+                "✅ Alignment saved! Template [" + config.getBankName() + "] has been updated.");
+    }
+
+    private void handleTemplateSwitch() {
+        String selectedBank = bankTemplateSelector.getValue();
+        if (selectedBank == null || selectedBank.equals(config.getBankName()))
+            return;
+
+        LOGGER.info("Switching to bank template: {}", selectedBank);
+        ChequeConfig newConfig = configRepo.getConfigByBank(selectedBank);
+
+        if (newConfig == null || newConfig.getBankName() == null || !newConfig.getBankName().equals(selectedBank)) {
+            LOGGER.warn("Template for {} not found or incomplete, creating from current baseline", selectedBank);
+            newConfig = configRepo.getConfig(); // fetch current id=1
+            newConfig.setBankName(selectedBank);
+        }
+
+        // Preserve printer-specific offsets when switching bank templates
+        newConfig.setOffsetX(config.getOffsetX());
+        newConfig.setOffsetY(config.getOffsetY());
+        newConfig.setDateOffsetX(config.getDateOffsetX());
+        newConfig.setDateOffsetY(config.getDateOffsetY());
+        newConfig.setSignaturePath(config.getSignaturePath());
+        newConfig.setActiveSignatureId(config.getActiveSignatureId());
+
+        this.config = newConfig;
+        rebuildPreview();
+    }
+
+    private void refreshBankTemplates() {
+        java.util.List<String> banks = configRepo.getAllBankNames();
+        if (!banks.contains("Canara Bank")) {
+            // Seed if missing
+            banks.add(0, "Canara Bank");
+        }
+        bankTemplateSelector.getItems().setAll(banks);
+    }
+
+    private void showAddBankTemplateDialog() {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("New Bank Template");
+        dialog.setHeaderText("Create a new alignment template.");
+        dialog.setContentText("Enter Bank Name (e.g. Axis Bank):");
+        AlertUtils.styleDialog(dialog);
+
+        dialog.showAndWait().ifPresent(name -> {
+            if (name.trim().isEmpty())
+                return;
+
+            LOGGER.info("Creating new bank template: {}", name.trim());
+            // Create new based on current VIEW baseline instead of factory defaults
+            ChequeConfig newTemplate = configRepo.getConfig();
+            newTemplate.setBankName(name.trim());
+
+            configRepo.saveAsTemplate(newTemplate);
+            refreshBankTemplates();
+            bankTemplateSelector.setValue(name.trim());
+        });
     }
 
     private void resetToDefaults() {
@@ -628,11 +628,8 @@ public class ChequeSettingsView extends VBox {
         chequePane.getChildren().clear();
         draggableNodes.clear();
         sigPreview = null;
-        if (bgView != null) {
-            chequePane.getChildren().add(bgView);
-        } else {
-            drawFallbackChequeTemplate();
-        }
+        // Always use bank-specific drawing (handles images + drawn fallback)
+        drawFallbackChequeTemplate();
         addSampleElements();
 
         for (javafx.scene.Node node : draggableNodes) {

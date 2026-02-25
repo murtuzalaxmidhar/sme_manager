@@ -75,6 +75,7 @@ public class ChequeConfig {
      */
     public static ChequeConfig getFactoryDefaults() {
         ChequeConfig cfg = new ChequeConfig();
+        cfg.setBankName("Canara Bank");
         cfg.setFontSize(12);
         cfg.setAcPayee(true);
         cfg.setAcPayeeX(31); // User-calibrated

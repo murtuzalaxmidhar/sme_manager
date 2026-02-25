@@ -5,6 +5,7 @@ import com.lax.sme_manager.repository.ChequeConfigRepository;
 import com.lax.sme_manager.repository.model.ChequeConfig;
 import com.lax.sme_manager.service.ChequePrintService;
 import com.lax.sme_manager.ui.theme.LaxTheme;
+import com.lax.sme_manager.util.ChequeTemplateUIUtil;
 import com.lax.sme_manager.util.DatabaseManager;
 import com.lax.sme_manager.util.IndianNumberToWords;
 
@@ -23,8 +24,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 import javafx.scene.effect.BlendMode;
 
 import org.slf4j.Logger;
@@ -177,26 +176,35 @@ public class ChequePreviewDialog extends Dialog<Void> {
         chequePane.setPrefSize(PREVIEW_WIDTH_PX, PREVIEW_HEIGHT_PX);
         chequePane.setMaxSize(PREVIEW_WIDTH_PX, PREVIEW_HEIGHT_PX);
 
-        // Ghost Background logic
+        // Background — cheque template (Use utility for fallback)
         try {
+            String imagePath = "/images/standard_cheque.png";
+            java.net.URL imageUrl = getClass().getResource(imagePath);
             Image bg = null;
-            var is = getClass().getResourceAsStream("/images/standard_cheque.png");
-            if (is != null)
-                bg = new Image(is);
-            if (bg == null) {
-                File file = new File("src/main/resources/images/standard_cheque.png");
-                if (file.exists())
-                    bg = new Image(file.toURI().toString());
+
+            if (imageUrl != null) {
+                bg = new Image(imageUrl.toExternalForm());
             }
-            if (bg != null) {
+
+            if (bg != null && !bg.isError()) {
                 bgView = new ImageView(bg);
                 bgView.setFitWidth(PREVIEW_WIDTH_PX);
                 bgView.setFitHeight(PREVIEW_HEIGHT_PX);
                 bgView.setPreserveRatio(false);
+
+                // Realistic Paper Leaf Styling
+                chequePane.setStyle("-fx-background-color: " + LaxTheme.Colors.WHITE + "; " +
+                        "-fx-border-color: #94a3b8; -fx-border-width: 0.5; " +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 15, 0, 0, 5); " +
+                        "-fx-background-radius: 4; -fx-border-radius: 4;");
                 chequePane.getChildren().add(bgView);
+            } else {
+                ChequeTemplateUIUtil.drawBankSpecificBackground(chequePane, config.getBankName(), MM_TO_PX,
+                        PREVIEW_WIDTH_PX, PREVIEW_HEIGHT_PX);
             }
         } catch (Exception e) {
-            chequePane.setStyle("-fx-background-color: #f8fafc;");
+            ChequeTemplateUIUtil.drawBankSpecificBackground(chequePane, config.getBankName(), MM_TO_PX,
+                    PREVIEW_WIDTH_PX, PREVIEW_HEIGHT_PX);
         }
 
         renderChequeElements();
@@ -326,16 +334,7 @@ public class ChequePreviewDialog extends Dialog<Void> {
     }
 
     private void loadBankTemplates() {
-        List<String> banks = new ArrayList<>();
-        String sql = "SELECT bank_name FROM bank_templates ORDER BY bank_name";
-        try (Connection conn = DatabaseManager.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                ResultSet rs = stmt.executeQuery()) {
-            while (rs.next())
-                banks.add(rs.getString("bank_name"));
-        } catch (SQLException e) {
-            LOGGER.error("Failed to load bank templates", e);
-        }
+        java.util.List<String> banks = configRepo.getAllBankNames();
         bankSelector.getItems().setAll(banks);
     }
 
@@ -344,41 +343,17 @@ public class ChequePreviewDialog extends Dialog<Void> {
         if (selectedBank == null || selectedBank.isBlank())
             return;
 
-        // Fetch new config from DB for this bank
-        String sql = "SELECT * FROM bank_templates WHERE bank_name = ?";
-        try (Connection conn = DatabaseManager.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, selectedBank);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                // Update local config object
-                config.setPayeeX(rs.getDouble("payee_x"));
-                config.setPayeeY(rs.getDouble("payee_y"));
-                config.setAmountWordsX(rs.getDouble("amount_words_x"));
-                config.setAmountWordsY(rs.getDouble("amount_words_y"));
-                config.setAmountDigitsX(rs.getDouble("amount_digits_x"));
-                config.setAmountDigitsY(rs.getDouble("amount_digits_y"));
-                config.setDateX(rs.getDouble("date_x"));
-                config.setDateY(rs.getDouble("date_y"));
-                // Generate positions from dateX/Y (simplified for preview switch)
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < 8; i++) {
-                    double x = config.getDateX() + (i * ChequeConfig.DATE_DIGIT_SPACING_MM);
-                    sb.append(String.format("%.2f,%.2f", x, config.getDateY()));
-                    if (i < 7)
-                        sb.append(";");
-                }
-                config.setDatePositions(sb.toString());
+        ChequeConfig newConfig = configRepo.getConfigByBank(selectedBank);
+        // Preserve printer-specific offsets when switching bank templates
+        newConfig.setOffsetX(config.getOffsetX());
+        newConfig.setOffsetY(config.getOffsetY());
+        newConfig.setDateOffsetX(config.getDateOffsetX());
+        newConfig.setDateOffsetY(config.getDateOffsetY());
+        newConfig.setSignaturePath(config.getSignaturePath());
+        newConfig.setActiveSignatureId(config.getActiveSignatureId());
 
-                config.setSignatureX(rs.getDouble("signature_x"));
-                config.setSignatureY(rs.getDouble("signature_y"));
-
-                // Re-render
-                renderChequeElements();
-            }
-        } catch (SQLException e) {
-            LOGGER.error("Failed to load template", e);
-        }
+        this.config = newConfig;
+        renderChequeElements();
     }
 
     private void print() {

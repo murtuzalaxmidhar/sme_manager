@@ -128,7 +128,7 @@ public class ChequePrintService {
         try {
             String amountWords = IndianNumberToWords.convert(data.amount());
             drawText(contentStream, amountWords, config.getAmountWordsX(), config.getAmountWordsY(), config);
-            String amountDigits = String.format("**%.2f/-", data.amount());
+            String amountDigits = String.format("%.2f/-", data.amount());
             drawText(contentStream, amountDigits, config.getAmountDigitsX(), config.getAmountDigitsY(), config);
         } catch (Exception e) {
             LOGGER.error("Failed to print amount", e);

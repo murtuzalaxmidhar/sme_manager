@@ -20,10 +20,10 @@ import java.util.function.Consumer;
 public class UpdateService {
     private static final Logger LOGGER = AppLogger.getLogger(UpdateService.class);
     private static final String CURRENT_VERSION = "2.1";
-    
-    // Placeholder URLs - In a real scenario, these would point to your server or GitHub Releases
-    private static final String VERSION_JSON_URL = "https://raw.githubusercontent.com/MurtazaJ53/sme_manager/main/version.json";
-    
+
+    // Raw URL to the version.json file on your GitHub repository
+    private static final String VERSION_JSON_URL = "https://raw.githubusercontent.com/murtuzalaxmidhar/sme_manager/main/version.json";
+
     public static class UpdateInfo {
         public String latestVersion;
         public String downloadUrl;
@@ -49,7 +49,7 @@ public class UpdateService {
                         .build();
 
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                
+
                 if (response.statusCode() == 200) {
                     String body = response.body();
                     String version = extractJsonValue(body, "latestVersion");
@@ -65,7 +65,7 @@ public class UpdateService {
             } catch (Exception e) {
                 LOGGER.error("Failed to check for updates: {}", e.getMessage());
             }
-            
+
             // Return "No Update" if check fails
             return new UpdateInfo(CURRENT_VERSION, "", "", false);
         });
@@ -79,10 +79,13 @@ public class UpdateService {
             for (int i = 0; i < length; i++) {
                 int num1 = i < v1.length ? Integer.parseInt(v1[i]) : 0;
                 int num2 = i < v2.length ? Integer.parseInt(v2[i]) : 0;
-                if (num1 > num2) return true;
-                if (num1 < num2) return false;
+                if (num1 > num2)
+                    return true;
+                if (num1 < num2)
+                    return false;
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
         return false;
     }
 
@@ -94,7 +97,8 @@ public class UpdateService {
                 int valueEnd = json.indexOf("\"", valueStart);
                 return json.substring(valueStart, valueEnd);
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
         return "";
     }
 
@@ -103,10 +107,10 @@ public class UpdateService {
             try {
                 URL url = new URL(downloadUrl);
                 Path tempFile = Paths.get(System.getProperty("java.io.tmpdir"), "sme_manager_update.jar");
-                
+
                 try (InputStream in = new BufferedInputStream(url.openStream());
-                     FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile())) {
-                    
+                        FileOutputStream fileOutputStream = new FileOutputStream(tempFile.toFile())) {
+
                     byte[] dataBuffer = new byte[1024];
                     int bytesRead;
                     long totalBytesRead = 0;
@@ -121,12 +125,12 @@ public class UpdateService {
                         }
                     }
                 }
-                
+
                 Platform.runLater(() -> progressCallback.accept(1.0));
                 LOGGER.info("Update downloaded to {}", tempFile);
-                
+
                 createAndExecuteUpdaterScript(tempFile);
-                
+
             } catch (Exception e) {
                 LOGGER.error("Download failed: {}", e.getMessage());
             }
@@ -147,12 +151,13 @@ public class UpdateService {
         StringBuilder scriptContent = new StringBuilder();
         scriptContent.append("@echo off\n");
         scriptContent.append("timeout /t 2 /nobreak > nul\n"); // Wait for app to close
-        scriptContent.append("move /y \"").append(updateJar.toString()).append("\" \"").append(currentPath.toString()).append("\"\n");
+        scriptContent.append("move /y \"").append(updateJar.toString()).append("\" \"").append(currentPath.toString())
+                .append("\"\n");
         scriptContent.append("start \"\" \"javaw\" -jar \"").append(currentPath.toString()).append("\"\n");
         scriptContent.append("del \"%~f0\"\n"); // Delete itself
 
         Files.writeString(scriptPath, scriptContent.toString());
-        
+
         // Execute and exit
         Runtime.getRuntime().exec("cmd /c start " + scriptPath.toString());
         System.exit(0);
