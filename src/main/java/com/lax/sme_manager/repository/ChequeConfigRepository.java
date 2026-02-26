@@ -106,27 +106,86 @@ public class ChequeConfigRepository {
             pstmt.setString(1, bankName);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return ChequeConfig.builder()
-                        .bankName(rs.getString("bank_name"))
-                        .payeeX(rs.getDouble("payee_x"))
-                        .payeeY(rs.getDouble("payee_y"))
-                        .amountWordsX(rs.getDouble("amount_words_x"))
-                        .amountWordsY(rs.getDouble("amount_words_y"))
-                        .amountDigitsX(rs.getDouble("amount_digits_x"))
-                        .amountDigitsY(rs.getDouble("amount_digits_y"))
-                        .dateX(rs.getDouble("date_x"))
-                        .dateY(rs.getDouble("date_y"))
-                        .signatureX(rs.getDouble("signature_x"))
-                        .signatureY(rs.getDouble("signature_y"))
-                        .fontSize(rs.getInt("font_size"))
-                        .isAcPayee(rs.getBoolean("is_ac_payee"))
-                        .datePositions(rs.getString("date_positions"))
-                        .build();
+                return mapResultSetToTemplate(rs);
             }
         } catch (SQLException e) {
             LOGGER.error("Error fetching bank config for: " + bankName, e);
         }
         return getConfig(); // Fallback to current config
+    }
+
+    public java.util.List<String> getAllBankNames() {
+        java.util.List<String> banks = new java.util.ArrayList<>();
+        String sql = "SELECT bank_name FROM bank_templates ORDER BY bank_name";
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
+            while (rs.next())
+                banks.add(rs.getString("bank_name"));
+        } catch (SQLException e) {
+            LOGGER.error("Failed to load bank names", e);
+        }
+        return banks;
+    }
+
+    public void saveAsTemplate(ChequeConfig config) {
+        String sql = """
+                INSERT OR REPLACE INTO bank_templates (
+                    bank_name, date_x, date_y, payee_x, payee_y,
+                    amount_words_x, amount_words_y, amount_digits_x, amount_digits_y,
+                    signature_x, signature_y, is_ac_payee, date_positions, font_size,
+                    ac_payee_x, ac_payee_y, micr_code, micr_x, micr_y
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, config.getBankName());
+            pstmt.setDouble(2, config.getDateX());
+            pstmt.setDouble(3, config.getDateY());
+            pstmt.setDouble(4, config.getPayeeX());
+            pstmt.setDouble(5, config.getPayeeY());
+            pstmt.setDouble(6, config.getAmountWordsX());
+            pstmt.setDouble(7, config.getAmountWordsY());
+            pstmt.setDouble(8, config.getAmountDigitsX());
+            pstmt.setDouble(9, config.getAmountDigitsY());
+            pstmt.setDouble(10, config.getSignatureX());
+            pstmt.setDouble(11, config.getSignatureY());
+            pstmt.setBoolean(12, config.isAcPayee());
+            pstmt.setString(13, config.getDatePositions());
+            pstmt.setInt(14, config.getFontSize());
+            pstmt.setDouble(15, config.getAcPayeeX());
+            pstmt.setDouble(16, config.getAcPayeeY());
+            pstmt.setString(17, config.getMicrCode());
+            pstmt.setDouble(18, config.getMicrX());
+            pstmt.setDouble(19, config.getMicrY());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            LOGGER.error("Error saving bank template: " + config.getBankName(), e);
+        }
+    }
+
+    private ChequeConfig mapResultSetToTemplate(ResultSet rs) throws SQLException {
+        return ChequeConfig.builder()
+                .bankName(rs.getString("bank_name"))
+                .dateX(rs.getDouble("date_x"))
+                .dateY(rs.getDouble("date_y"))
+                .payeeX(rs.getDouble("payee_x"))
+                .payeeY(rs.getDouble("payee_y"))
+                .amountWordsX(rs.getDouble("amount_words_x"))
+                .amountWordsY(rs.getDouble("amount_words_y"))
+                .amountDigitsX(rs.getDouble("amount_digits_x"))
+                .amountDigitsY(rs.getDouble("amount_digits_y"))
+                .signatureX(rs.getDouble("signature_x"))
+                .signatureY(rs.getDouble("signature_y"))
+                .isAcPayee(rs.getBoolean("is_ac_payee"))
+                .datePositions(rs.getString("date_positions"))
+                .fontSize(rs.getInt("font_size"))
+                .acPayeeX(rs.getDouble("ac_payee_x"))
+                .acPayeeY(rs.getDouble("ac_payee_y"))
+                .micrCode(rs.getString("micr_code"))
+                .micrX(rs.getDouble("micr_x"))
+                .micrY(rs.getDouble("micr_y"))
+                .build();
     }
 
     private void insertDefaultConfig(ChequeConfig config) {

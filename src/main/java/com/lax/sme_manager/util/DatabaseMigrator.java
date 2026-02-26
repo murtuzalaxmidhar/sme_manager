@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -14,7 +15,7 @@ import java.sql.Statement;
  */
 public class DatabaseMigrator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseMigrator.class);
-    private static final int CURRENT_VERSION = 18; // Version 18: Data Archiving
+    private static final int CURRENT_VERSION = 20; // Version 20: Full Template Schema
 
     public void migrate() {
         try (Connection conn = DatabaseManager.getConnection()) {
@@ -120,6 +121,14 @@ public class DatabaseMigrator {
             if (fromVersion < 18) {
                 LOGGER.info("Executing Phase 18 Migration (Data Archiving)...");
                 migrateToV18(stmt);
+            }
+            if (fromVersion < 19) {
+                LOGGER.info("Executing Phase 19 Migration (Multi-Bank Initialization)...");
+                migrateToV19(stmt);
+            }
+            if (fromVersion < 20) {
+                LOGGER.info("Executing Phase 20 Migration (Full Template Schema)...");
+                migrateToV20(stmt);
             }
         }
     }
@@ -296,7 +305,6 @@ public class DatabaseMigrator {
             }
         }
     }
-
     private void createBaseSchema(Statement stmt) throws SQLException {
         // Vendors
         stmt.execute("""
@@ -412,12 +420,51 @@ public class DatabaseMigrator {
                     scale DOUBLE DEFAULT 1.0
                 )""");
 
-        // 3. Seed default config
+        // 3. Seed default config with Canara Bank
         stmt.execute(
                 """
                         INSERT INTO cheque_config (id, bank_name, is_ac_payee, font_size, date_x, date_y, payee_x, payee_y, amount_words_x, amount_words_y, amount_digits_x, amount_digits_y, signature_x, signature_y)
-                        VALUES (1, 'Default Bank', 1, 12, 160.0, 15.0, 30.0, 45.0, 30.0, 60.0, 160.0, 55.0, 150.0, 70.0)
+                        VALUES (1, 'Canara Bank', 1, 12, 160.0, 15.0, 30.0, 45.0, 30.0, 60.0, 160.0, 55.0, 150.0, 70.0)
                         """);
+    }
+
+    private void migrateToV19(Statement stmt) throws SQLException {
+        // Ensure the current active config is marked as Canara Bank if it was default
+        stmt.execute(
+                "UPDATE cheque_config SET bank_name = 'Canara Bank' WHERE id = 1 AND (bank_name = 'Default Bank' OR bank_name IS NULL)");
+
+        // Also ensure Canara Bank exists in bank_templates
+        stmt.execute(
+                "INSERT OR IGNORE INTO bank_templates (bank_name, date_x, date_y, payee_x, payee_y, amount_words_x, amount_words_y, amount_digits_x, amount_digits_y, signature_x, signature_y) "
+                        +
+                        "SELECT bank_name, date_x, date_y, payee_x, payee_y, amount_words_x, amount_words_y, amount_digits_x, amount_digits_y, signature_x, signature_y "
+                        +
+                        "FROM cheque_config WHERE bank_name = 'Canara Bank'");
+    }
+
+    private void migrateToV20(Statement stmt) throws SQLException {
+        try {
+            stmt.execute("ALTER TABLE bank_templates ADD COLUMN is_ac_payee BOOLEAN DEFAULT 1");
+        } catch (SQLException e) {
+            LOGGER.warn("is_ac_payee already exists in bank_templates");
+        }
+
+        try {
+            stmt.execute("ALTER TABLE bank_templates ADD COLUMN date_positions TEXT");
+        } catch (SQLException e) {
+            LOGGER.warn("date_positions already exists in bank_templates");
+        }
+
+        try {
+            stmt.execute("ALTER TABLE bank_templates ADD COLUMN font_size INTEGER DEFAULT 12");
+        } catch (SQLException e) {
+            LOGGER.warn("font_size already exists in bank_templates");
+        }
+
+        // Sync data: ensure the templates have the current calibration as a baseline if
+        // they are empty
+        stmt.execute(
+                "UPDATE bank_templates SET date_positions = (SELECT date_positions FROM cheque_config WHERE id = 1) WHERE date_positions IS NULL");
     }
 
     private void migrateToV15(Statement stmt) throws SQLException {

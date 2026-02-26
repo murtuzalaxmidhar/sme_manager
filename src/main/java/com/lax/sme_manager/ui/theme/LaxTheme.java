@@ -30,6 +30,13 @@ public class LaxTheme {
         public static final String WARNING = "#F59E0B"; // Updated from #D97706
         public static final String ERROR = "#EF4444"; // Updated from #DC2626
         public static final String INFO = "#3B82F6"; // Updated from #0284C7
+
+        // Cheque Specific Colors
+        public static final String CHEQUE_BLUE = "#F0F9FF"; // Pale Blue
+        public static final String CHEQUE_CREAM = "#FEFCE8"; // Pale Cream (Standard CTS-2010)
+        public static final String CHEQUE_WHITE = "#FAFAFA"; // Clean White
+        public static final String CHEQUE_GREY = "#F1F5F9"; // Light Grey
+        public static final String CHEQUE_YELLOW = "#FFF9E6"; // Pale Yellow
     }
 
     // ============ TYPOGRAPHY ============
